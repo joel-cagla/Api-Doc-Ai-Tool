@@ -1,5 +1,50 @@
 {
   "devDependencies": {
+    "@types/node": "^22.15.30",
     "ts-morph": "^26.0.0"
-  }
+  },
+  "name": "api-doc-ai-tool",
+  "version": "1.0.0",
+  "description": "An AI tool for creating API docs.",
+  "main": "index.js",
+  "dependencies": {
+    "axios": "^1.9.0",
+    "balanced-match": "^1.0.2",
+    "brace-expansion": "^2.0.1",
+    "braces": "^3.0.3",
+    "code-block-writer": "^13.0.3",
+    "dotenv": "^16.5.0",
+    "fast-glob": "^3.3.3",
+    "fastq": "^1.19.1",
+    "fill-range": "^7.1.1",
+    "glob-parent": "^5.1.2",
+    "is-extglob": "^2.1.1",
+    "is-glob": "^4.0.3",
+    "is-number": "^7.0.0",
+    "merge2": "^1.4.1",
+    "micromatch": "^4.0.8",
+    "minimatch": "^10.0.1",
+    "path-browserify": "^1.0.1",
+    "picomatch": "^2.3.1",
+    "queue-microtask": "^1.2.3",
+    "reusify": "^1.1.0",
+    "run-parallel": "^1.2.0",
+    "to-regex-range": "^5.0.1",
+    "typescript": "^5.8.3"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/joel-cagla/Api-Doc-Ai-Tool.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/joel-cagla/Api-Doc-Ai-Tool/issues"
+  },
+  "homepage": "https://github.com/joel-cagla/Api-Doc-Ai-Tool#readme"
 }
