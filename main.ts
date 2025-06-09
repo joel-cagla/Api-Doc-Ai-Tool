@@ -1,52 +1,80 @@
 import { Project } from "ts-morph";
-import axios from "axios";
 import * as dotenv from "dotenv";
+import fetch from "node-fetch";
+import { VariableDeclaration, ArrowFunction } from "ts-morph";
 
 dotenv.config();
 
 const LLM_API_URL = process.env.LLM_API_URL;
 const API_KEY = process.env.API_KEY;
 
-async function generateAPIDocFromFunction(fnCode: string): Promise<string> {
-  const prompt = `Generate REST-style API documentation in OpenAPI-flavored Markdown for the following TypeScript functions. Include endpoint path, method, description, parameters, request/response schemas if applicable.
+async function generateAPIDocFromFunction(fnCode: string): Promise<any> {
+  const prompt = {
+    inputs: `Generate REST-style API documentation in OpenAPI-flavored Markdown for the following TypeScript functions. Include endpoint path, method, description, parameters, request/response schemas if applicable.
 \`\`\`ts
 ${fnCode}
 \`\`\`
-`;
+`,
+  };
+  try {
+    const response = await fetch(
+      "https://router.huggingface.co/hf-inference/models/facebook/bart-large-cnn",
+      {
+        headers: {
+          Authorization: `Bearer ${API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        method: "POST",
+        body: JSON.stringify(prompt),
+      }
+    );
 
-  const response = await axios.post(
-    LLM_API_URL!,
-    { inputs: prompt },
-    {
-      headers: {
-        Authorization: `Bearer ${API_KEY}`,
-        "Content-Type": "application/json",
-      },
+    console.log(response);
+
+    const raw: any = await response.json();
+    console.log("Raw response: ", JSON.stringify(raw, null, 2));
+
+    if ("error" in raw) {
+      return `Error from model: ${raw.error}`;
     }
-  );
 
-  return response.data.generated_text || "No output";
+    console.log(response);
+    return response;
+  } catch (error) {
+    console.log(error);
+  }
 }
 
 async function extractFunctionsAndGenerateDocs(filePath: string) {
   const project = new Project();
   const sourceFile = project.addSourceFileAtPath(filePath);
-
-  const functions = sourceFile.getFunctions();
+  const declarations = sourceFile.getVariableDeclarations();
+  const functions: { name: string; code: string }[] = [];
   const docs: string[] = [];
 
-  for (const fn of functions) {
-    const fnCode = fn.getText();
-    console.log(`Generating documentation for function: ${fn.getName()}`);
-    const doc = await generateAPIDocFromFunction(fnCode);
-    docs.push(`${fn.getName()}\n\n${doc}`);
+  for (const declaration of declarations) {
+    const init = declaration.getInitializer();
+    if (init && init.getKindName() === "ArrowFunction") {
+      functions.push({
+        name: declaration.getName(),
+        code: declaration.getText(),
+      });
+    }
   }
 
+  console.log(functions);
+
+  for (const fn of functions) {
+    console.log(`Generating documentation for function: ${fn.name}`);
+    const doc = await generateAPIDocFromFunction(fn.code);
+    docs.push(`${fn.name}\n\n${doc}`);
+  }
   return docs.join("\n\n---\n\n");
 }
 
 (async () => {
-  const filePath = "./nodeApnController.ts";
+  const filePath =
+    "/Users/joeltron/Documents/GitHub/Api-Doc-Ai-Tool/files/nodeApnController.ts";
   const docs = await extractFunctionsAndGenerateDocs(filePath);
   console.log("\n API Documentation:\n");
   console.log(docs);
