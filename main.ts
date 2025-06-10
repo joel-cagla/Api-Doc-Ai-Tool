@@ -1,55 +1,32 @@
 import { Project } from "ts-morph";
 import * as dotenv from "dotenv";
-import fetch from "node-fetch";
-import { InferenceClient } from "@huggingface/inference";
-import { apis } from "@huggingface/transformers/types/env";
+import { pipeline } from "@xenova/transformers";
 
 dotenv.config();
 
-const LLM_API_URL = process.env.LLM_API_URL;
-const API_KEY = process.env.API_KEY;
-
-const client = new InferenceClient(API_KEY);
-
-async function generateAPIDocFromFunction(fnCode: string): Promise<any> {
+async function generateAPIDocFromFunction(fnCode: string) {
   const prompt = `Generate REST-style API documentation in OpenAPI-flavored Markdown for the following TypeScript functions. Include endpoint path, method, description, parameters, request/response schemas if applicable.
 \`\`\`ts
 ${fnCode}
 \`\`\`
 `;
   try {
-    const response = await client.chatCompletion({
-      provider: "novita",
-      model: "meta-llama/Llama-3.1-8B-Instruct",
-      messages: [
-        {
-          role: "user",
-          content: prompt,
-        },
-      ],
-    });
-    // const response = await fetch(
-    //   "https://router.huggingface.co/hf-inference/models/facebook/bart-large-cnn",
-    //   {
-    //     headers: {
-    //       Authorization: `Bearer ${API_KEY}`,
-    //       "Content-Type": "application/json",
-    //     },
-    //     method: "POST",
-    //     body: JSON.stringify(prompt),
-    //   }
-    // );
+    const generator = await pipeline("text-generation", "Xenova/gpt2");
 
-    console.log(response);
+    const messages = [
+      {
+        role: "system",
+        content:
+          "You will be given source code for a TypeScript function. You must generate REST-style API documentation in OpenAPI-flavored Markdown for the following TypeScript functions. Include endpoint path, method, description, parameters, request/response schemas if applicable.",
+      },
+      { role: "user", content: `${fnCode}` },
+    ];
 
-    const raw: any = await response;
-    console.log("Raw response: ", JSON.stringify(raw, null, 2));
+    const response = await generator(prompt);
 
-    if ("error" in raw) {
-      return `Error from model: ${raw.error}`;
-    }
-
-    console.log(response.choices[0].message);
+    console.log("response:", response);
+    console.log("Raw: ", JSON.stringify(response, null, 2));
+    console.log(response[0]);
     return response;
   } catch (error) {
     console.log(error);
