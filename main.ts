@@ -1,11 +1,11 @@
-import { Project } from "ts-morph";
+import { FunctionDeclaration, Project } from "ts-morph";
 import * as dotenv from "dotenv";
 import fetch from "node-fetch";
 
 dotenv.config();
 
 async function generateAPIDocFromFunction(fnCode: string) {
-  const prompt = `You are a technical writer. Generate concise and clear REST-style API documentation in OpenAPI-flavored Markdown for the following TypeScript functions. Include endpoint path, method, description, parameters, request/response schemas if applicable.
+  const prompt = `You are a technical writer. Create concise and clear REST-style API documentation for the following TypeScript functions.
 \`\`\`ts
 ${fnCode}
 \`\`\`
@@ -21,8 +21,8 @@ ${fnCode}
       }),
     });
 
-    //console.log("Raw: ", JSON.stringify(await response, null, 2));
-    console.log(await response);
+    //console.log("Raw response: ", JSON.stringify(await response, null, 2));
+    //console.log(await response);
     const data: any = await response.json();
     return data.response;
   } catch (error) {
@@ -33,9 +33,18 @@ ${fnCode}
 async function extractFunctionsAndGenerateDocs(filePath: string) {
   const project = new Project();
   const sourceFile = project.addSourceFileAtPath(filePath);
-  const declarations = sourceFile.getVariableDeclarations();
   const functions: { name: string; code: string }[] = [];
-  const docs: string[] = [];
+
+  if (sourceFile.getFunctions().length > 0) {
+    const regularFunctions = sourceFile.getFunctions();
+    for (const regularFn of regularFunctions) {
+      functions.push({
+        name: regularFn.getName()!,
+        code: regularFn.getText(),
+      });
+    }
+  }
+  const declarations = sourceFile.getVariableDeclarations();
 
   for (const declaration of declarations) {
     const init = declaration.getInitializer();
@@ -46,6 +55,8 @@ async function extractFunctionsAndGenerateDocs(filePath: string) {
       });
     }
   }
+
+  const docs: string[] = [];
 
   for (const fn of functions) {
     console.log(`Generating documentation for function: ${fn.name}`);
