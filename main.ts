@@ -1,33 +1,30 @@
 import { Project } from "ts-morph";
 import * as dotenv from "dotenv";
-import { pipeline } from "@xenova/transformers";
+import fetch from "node-fetch";
 
 dotenv.config();
 
 async function generateAPIDocFromFunction(fnCode: string) {
-  const prompt = `Generate REST-style API documentation in OpenAPI-flavored Markdown for the following TypeScript functions. Include endpoint path, method, description, parameters, request/response schemas if applicable.
+  const prompt = `You are a technical writer. Generate concise and clear REST-style API documentation in OpenAPI-flavored Markdown for the following TypeScript functions. Include endpoint path, method, description, parameters, request/response schemas if applicable.
 \`\`\`ts
 ${fnCode}
 \`\`\`
 `;
   try {
-    const generator = await pipeline("text-generation", "Xenova/gpt2");
+    const response = await fetch("http://localhost:11434/api/generate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "llama3",
+        prompt,
+        stream: false,
+      }),
+    });
 
-    const messages = [
-      {
-        role: "system",
-        content:
-          "You will be given source code for a TypeScript function. You must generate REST-style API documentation in OpenAPI-flavored Markdown for the following TypeScript functions. Include endpoint path, method, description, parameters, request/response schemas if applicable.",
-      },
-      { role: "user", content: `${fnCode}` },
-    ];
-
-    const response = await generator(prompt);
-
-    console.log("response:", response);
-    console.log("Raw: ", JSON.stringify(response, null, 2));
-    console.log(response[0]);
-    return response;
+    //console.log("Raw: ", JSON.stringify(await response, null, 2));
+    console.log(await response);
+    const data: any = await response.json();
+    return data.response;
   } catch (error) {
     console.log(error);
   }
