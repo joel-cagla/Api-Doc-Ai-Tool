@@ -1,6 +1,8 @@
-import { FunctionDeclaration, Project } from "ts-morph";
+import { Project } from "ts-morph";
 import * as dotenv from "dotenv";
 import fetch from "node-fetch";
+import { writeFileSync } from "fs";
+import * as path from "path";
 
 dotenv.config();
 
@@ -66,10 +68,17 @@ async function extractFunctionsAndGenerateDocs(filePath: string) {
   return docs.join("\n\n---\n\n");
 }
 
+function writeDocumentsToFile(documents: string, filename: string) {
+  const outputPath = path.resolve(__dirname, filename);
+  writeFileSync(outputPath, documents, { encoding: "utf-8" });
+  console.log("Documentation written to file");
+}
+
 (async () => {
   const filePath =
     "/Users/joeltron/Documents/GitHub/Api-Doc-Ai-Tool/files/nodeApnController.ts";
   const docs = await extractFunctionsAndGenerateDocs(filePath);
   console.log("\n API Documentation:\n");
   console.log(docs);
+  writeDocumentsToFile(docs, "DocsFile.txt");
 })();
