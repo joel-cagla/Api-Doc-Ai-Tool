@@ -1,8 +1,8 @@
 import { Project } from "ts-morph";
 import * as dotenv from "dotenv";
 import fetch from "node-fetch";
-import { writeFileSync } from "fs";
 import * as path from "path";
+import * as fs from "fs";
 
 dotenv.config();
 
@@ -32,53 +32,60 @@ ${fnCode}
   }
 }
 
-async function extractFunctionsAndGenerateDocs(filePath: string) {
+async function extractFunctionsAndGenerateDocs(directoryPath: string) {
   const project = new Project();
-  const sourceFile = project.addSourceFileAtPath(filePath);
-  const functions: { name: string; code: string }[] = [];
-
-  if (sourceFile.getFunctions().length > 0) {
-    const regularFunctions = sourceFile.getFunctions();
-    for (const regularFn of regularFunctions) {
-      functions.push({
-        name: regularFn.getName()!,
-        code: regularFn.getText(),
-      });
-    }
-  }
-  const declarations = sourceFile.getVariableDeclarations();
-
-  for (const declaration of declarations) {
-    const init = declaration.getInitializer();
-    if (init && init.getKindName() === "ArrowFunction") {
-      functions.push({
-        name: declaration.getName(),
-        code: declaration.getText(),
-      });
-    }
-  }
+  project.addSourceFilesAtPaths(`${directoryPath}/**/*.{ts,tsx}`);
 
   const docs: string[] = [];
 
-  for (const fn of functions) {
-    console.log(`Generating documentation for function: ${fn.name}`);
-    const doc = await generateAPIDocFromFunction(fn.code);
-    docs.push(`${fn.name}\n\n${doc}`);
+  const sourceFiles = project.getSourceFiles();
+
+  if (!sourceFiles.length) {
+    console.log("No source code files found");
+    return;
+  }
+
+  for (const file of sourceFiles) {
+    const functions: { name: string; code: string }[] = [];
+    if (file.getFunctions().length > 0) {
+      const regularFunctions = file.getFunctions();
+      for (const regularFn of regularFunctions) {
+        functions.push({
+          name: regularFn.getName() ?? "anonymous",
+          code: regularFn.getText(),
+        });
+      }
+    }
+    const declarations = file.getVariableDeclarations();
+
+    for (const declaration of declarations) {
+      const init = declaration.getInitializer();
+      if (init && init.getKindName() === "ArrowFunction") {
+        functions.push({
+          name: declaration.getName(),
+          code: declaration.getText(),
+        });
+      }
+    }
+
+    for (const fn of functions) {
+      console.log(`Generating documentation for function: ${fn.name}`);
+      const doc = await generateAPIDocFromFunction(fn.code);
+      docs.push(`${fn.name}\n\n${doc}`);
+    }
   }
   return docs.join("\n\n---\n\n");
 }
 
 function writeDocumentsToFile(documents: string, filename: string) {
   const outputPath = path.resolve(__dirname, filename);
-  writeFileSync(outputPath, documents, { encoding: "utf-8" });
-  console.log("Documentation written to file");
+  fs.writeFileSync(outputPath, documents, { encoding: "utf-8" });
 }
 
 (async () => {
-  const filePath =
-    "/Users/joeltron/Documents/GitHub/Api-Doc-Ai-Tool/files/nodeApnController.ts";
-  const docs = await extractFunctionsAndGenerateDocs(filePath);
+  const directoryPath = path.resolve(__dirname, "./files");
+  const docs = await extractFunctionsAndGenerateDocs(directoryPath);
   console.log("\n API Documentation:\n");
   console.log(docs);
-  writeDocumentsToFile(docs, "DocsFile.txt");
+  writeDocumentsToFile(docs!, "DocsFile.txt");
 })();
