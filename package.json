@@ -7,6 +7,9 @@
   "version": "1.0.0",
   "description": "An AI tool for creating API docs.",
   "main": "index.js",
+  "bin": {
+    "api-doc-gen": "./dist/cli.js"
+  },
   "dependencies": {
     "@huggingface/inference": "^4.0.2",
     "axios": "^1.9.0",
@@ -14,6 +17,7 @@
     "brace-expansion": "^2.0.1",
     "braces": "^3.0.3",
     "code-block-writer": "^13.0.3",
+    "commander": "^14.0.0",
     "dotenv": "^16.5.0",
     "fast-glob": "^3.3.3",
     "fastq": "^1.19.1",
@@ -36,7 +40,9 @@
     "typescript": "^5.8.3"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "tsc",
+    "start": "node ./dist/cli.js"
   },
   "repository": {
     "type": "git",

@@ -7,8 +7,8 @@ import * as fs from "fs";
 dotenv.config();
 
 async function generateAPIDocFromFunction(fnCode: string) {
-  const prompt = `You are a technical writer. Create concise and clear REST-style API documentation for the following TypeScript functions.
-\`\`\`ts
+  const prompt = `You are a technical writer. Create concise and clear REST-style API documentation for the following TypeScript functions. Do not include any pleasantries or any other writing than the documentation itself.
+\`\`\`
 ${fnCode}
 \`\`\`
 `;
@@ -32,7 +32,7 @@ ${fnCode}
   }
 }
 
-async function extractFunctionsAndGenerateDocs(directoryPath: string) {
+export async function extractFunctionsAndGenerateDocs(directoryPath: string) {
   const project = new Project();
   project.addSourceFilesAtPaths(`${directoryPath}/**/*.{ts,tsx}`);
 
@@ -77,15 +77,7 @@ async function extractFunctionsAndGenerateDocs(directoryPath: string) {
   return docs.join("\n\n---\n\n");
 }
 
-function writeDocumentsToFile(documents: string, filename: string) {
+export function writeDocumentsToFile(documents: string, filename: string) {
   const outputPath = path.resolve(__dirname, filename);
   fs.writeFileSync(outputPath, documents, { encoding: "utf-8" });
 }
-
-(async () => {
-  const directoryPath = path.resolve(__dirname, "./files");
-  const docs = await extractFunctionsAndGenerateDocs(directoryPath);
-  console.log("\n API Documentation:\n");
-  console.log(docs);
-  writeDocumentsToFile(docs!, "DocsFile.txt");
-})();
