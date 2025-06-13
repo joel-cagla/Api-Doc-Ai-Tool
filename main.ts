@@ -23,8 +23,6 @@ ${fnCode}
       }),
     });
 
-    //console.log("Raw response: ", JSON.stringify(await response, null, 2));
-    //console.log(await response);
     const data: any = await response.json();
     return data.response;
   } catch (error) {
