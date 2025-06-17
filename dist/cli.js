@@ -47,7 +47,12 @@ program
     .action(async (directory, options) => {
     const fullPath = path.resolve(process.cwd(), directory);
     console.log(`Parsing directory: ${fullPath}`);
-    const docs = await (0, main_1.extractFunctionsAndGenerateDocs)(fullPath);
+    const functions = (0, main_1.extractAllFunctions)(fullPath);
+    if (!functions) {
+        console.log("No functions extracted");
+        return;
+    }
+    const docs = await (0, main_1.generateDocs)(functions);
     if (!docs) {
         console.log("No documentation generated.");
         return;

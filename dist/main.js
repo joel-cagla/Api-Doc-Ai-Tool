@@ -36,7 +36,8 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.extractFunctionsAndGenerateDocs = extractFunctionsAndGenerateDocs;
+exports.generateDocs = generateDocs;
+exports.extractAllFunctions = extractAllFunctions;
 exports.writeDocumentsToFile = writeDocumentsToFile;
 const ts_morph_1 = require("ts-morph");
 const dotenv = __importStar(require("dotenv"));
@@ -45,7 +46,7 @@ const path = __importStar(require("path"));
 const fs = __importStar(require("fs"));
 dotenv.config();
 async function generateAPIDocFromFunction(fnCode) {
-    const prompt = `You are a technical writer. Create concise and clear REST-style API documentation for the following TypeScript functions. Do not include any pleasantries or any other writing than the documentation itself.
+    const prompt = `You are a technical writer. Create concise and clear REST-style API documentation for the following TypeScript functions. Do not include any pleasantries or anything other than the documentation itself.
 \`\`\`
 ${fnCode}
 \`\`\`
@@ -60,8 +61,6 @@ ${fnCode}
                 stream: false,
             }),
         });
-        //console.log("Raw response: ", JSON.stringify(await response, null, 2));
-        //console.log(await response);
         const data = await response.json();
         return data.response;
     }
@@ -69,17 +68,45 @@ ${fnCode}
         console.log(error);
     }
 }
-async function extractFunctionsAndGenerateDocs(directoryPath) {
+async function generateDocs(extractedFunctions) {
+    const docs = [];
+    const funcsToGenerate = [];
+    const functions = extractedFunctions;
+    let generatingFunctionNames;
+    if (functions.length > 4) {
+        while (funcsToGenerate.length < 4) {
+            for (const func of functions) {
+                funcsToGenerate.push(func.code);
+                generatingFunctionNames = functions.map((fn) => func.name).join(", ");
+                const index = functions.findIndex((func) => func);
+                functions.splice(index, 1);
+            }
+        }
+        console.log(`Generating documentation for functions: ${generatingFunctionNames}`);
+        const doc = await generateAPIDocFromFunction(funcsToGenerate);
+        docs.push(`\n\n${doc}`);
+        generateDocs(functions);
+    }
+    else {
+        for (const func of functions) {
+            funcsToGenerate.push(func.code);
+        }
+        console.log(`Generating documentation for functions: ${generatingFunctionNames}`);
+        const doc = await generateAPIDocFromFunction(funcsToGenerate);
+        docs.push(`\n\n${doc}`);
+    }
+    return docs.join("\n\n---\n\n");
+}
+function extractAllFunctions(directoryPath) {
     const project = new ts_morph_1.Project();
     project.addSourceFilesAtPaths(`${directoryPath}/**/*.{ts,tsx}`);
-    const docs = [];
+    const functions = [];
     const sourceFiles = project.getSourceFiles();
     if (!sourceFiles.length) {
         console.log("No source code files found");
         return;
     }
     for (const file of sourceFiles) {
-        const functions = [];
         if (file.getFunctions().length > 0) {
             const regularFunctions = file.getFunctions();
             for (const regularFn of regularFunctions) {
@@ -99,22 +126,10 @@ async function extractFunctionsAndGenerateDocs(directoryPath) {
                 });
             }
         }
-        for (const fn of functions) {
-            console.log(`Generating documentation for function: ${fn.name}`);
-            const doc = await generateAPIDocFromFunction(fn.code);
-            docs.push(`${fn.name}\n\n${doc}`);
-        }
     }
-    return docs.join("\n\n---\n\n");
+    return functions;
 }
 function writeDocumentsToFile(documents, filename) {
     const outputPath = path.resolve(__dirname, filename);
     fs.writeFileSync(outputPath, documents, { encoding: "utf-8" });
 }
-// (async () => {
-//   const directoryPath = path.resolve(__dirname, "./files");
-//   const docs = await extractFunctionsAndGenerateDocs(directoryPath);
-//   console.log("\n API Documentation:\n");
-//   console.log(docs);
-//   writeDocumentsToFile(docs!, "DocsFile.txt");
-// })();

@@ -6,8 +6,8 @@ import * as fs from "fs";
 
 dotenv.config();
 
-async function generateAPIDocFromFunction(fnCode: string) {
-  const prompt = `You are a technical writer. Create concise and clear REST-style API documentation for the following TypeScript functions. Do not include any pleasantries or any other writing than the documentation itself.
+async function generateAPIDocFromFunction(fnCode: string[]) {
+  const prompt = `You are a technical writer. Create concise and clear REST-style API documentation for the following TypeScript functions. Do not include any pleasantries or anything other than the documentation itself.
 \`\`\`
 ${fnCode}
 \`\`\`
@@ -30,11 +30,51 @@ ${fnCode}
   }
 }
 
-export async function extractFunctionsAndGenerateDocs(directoryPath: string) {
+export async function generateDocs(
+  extractedFunctions: {
+    name: string;
+    code: string;
+  }[]
+) {
+  const docs: string[] = [];
+  const funcsToGenerate: string[] = [];
+
+  const functions = extractedFunctions;
+  let generatingFunctionNames: string;
+
+  if (functions.length > 4) {
+    while (funcsToGenerate.length < 4) {
+      for (const func of functions) {
+        funcsToGenerate.push(func.code);
+        generatingFunctionNames = functions.map((fn) => func.name).join(", ");
+        const index = functions.findIndex((func) => func);
+        functions.splice(index, 1);
+      }
+    }
+    console.log(
+      `Generating documentation for functions: ${generatingFunctionNames!}`
+    );
+    const doc = await generateAPIDocFromFunction(funcsToGenerate);
+    docs.push(`\n\n${doc}`);
+    generateDocs(functions);
+  } else {
+    for (const func of functions) {
+      funcsToGenerate.push(func.code);
+    }
+    console.log(
+      `Generating documentation for functions: ${generatingFunctionNames!}`
+    );
+    const doc = await generateAPIDocFromFunction(funcsToGenerate);
+    docs.push(`\n\n${doc}`);
+  }
+  return docs.join("\n\n---\n\n");
+}
+
+export function extractAllFunctions(directoryPath: string) {
   const project = new Project();
   project.addSourceFilesAtPaths(`${directoryPath}/**/*.{ts,tsx}`);
 
-  const docs: string[] = [];
+  const functions: { name: string; code: string }[] = [];
 
   const sourceFiles = project.getSourceFiles();
 
@@ -44,7 +84,6 @@ export async function extractFunctionsAndGenerateDocs(directoryPath: string) {
   }
 
   for (const file of sourceFiles) {
-    const functions: { name: string; code: string }[] = [];
     if (file.getFunctions().length > 0) {
       const regularFunctions = file.getFunctions();
       for (const regularFn of regularFunctions) {
@@ -65,14 +104,8 @@ export async function extractFunctionsAndGenerateDocs(directoryPath: string) {
         });
       }
     }
-
-    for (const fn of functions) {
-      console.log(`Generating documentation for function: ${fn.name}`);
-      const doc = await generateAPIDocFromFunction(fn.code);
-      docs.push(`${fn.name}\n\n${doc}`);
-    }
   }
-  return docs.join("\n\n---\n\n");
+  return functions;
 }
 
 export function writeDocumentsToFile(documents: string, filename: string) {

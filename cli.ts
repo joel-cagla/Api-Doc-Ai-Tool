@@ -2,7 +2,11 @@
 
 import { Command } from "commander";
 import * as path from "path";
-import { extractFunctionsAndGenerateDocs, writeDocumentsToFile } from "./main";
+import {
+  extractAllFunctions,
+  generateDocs,
+  writeDocumentsToFile,
+} from "./main";
 
 const program = new Command();
 program
@@ -17,7 +21,12 @@ program
     const fullPath = path.resolve(process.cwd(), directory);
     console.log(`Parsing directory: ${fullPath}`);
 
-    const docs = await extractFunctionsAndGenerateDocs(fullPath);
+    const functions = extractAllFunctions(fullPath);
+    if (!functions) {
+      console.log("No functions extracted");
+      return;
+    }
+    const docs = await generateDocs(functions);
     if (!docs) {
       console.log("No documentation generated.");
       return;
