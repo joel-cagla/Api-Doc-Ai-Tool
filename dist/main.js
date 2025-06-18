@@ -77,7 +77,7 @@ async function generateDocs(extractedFunctions) {
         while (funcsToGenerate.length < 4) {
             for (const func of functions) {
                 funcsToGenerate.push(func.code);
-                generatingFunctionNames = functions.map((fn) => func.name).join(", ");
+                generatingFunctionNames = functions.map((fn) => fn.name).join(", ");
                 const index = functions.findIndex((func) => func);
                 functions.splice(index, 1);
             }
