@@ -70,29 +70,13 @@ ${fnCode}
 }
 async function generateDocs(extractedFunctions) {
     const docs = [];
-    const funcsToGenerate = [];
-    const functions = extractedFunctions;
-    let generatingFunctionNames;
-    if (functions.length > 4) {
-        while (funcsToGenerate.length < 4) {
-            for (const func of functions) {
-                funcsToGenerate.push(func.code);
-                generatingFunctionNames = functions.map((fn) => fn.name).join(", ");
-                const index = functions.findIndex((func) => func);
-                functions.splice(index, 1);
-            }
-        }
-        console.log(`Generating documentation for functions: ${generatingFunctionNames}`);
-        const doc = await generateAPIDocFromFunction(funcsToGenerate);
-        docs.push(`\n\n${doc}`);
-        generateDocs(functions);
-    }
-    else {
-        for (const func of functions) {
-            funcsToGenerate.push(func.code);
-        }
-        console.log(`Generating documentation for functions: ${generatingFunctionNames}`);
-        const doc = await generateAPIDocFromFunction(funcsToGenerate);
+    const functionNumberLimit = 4;
+    for (let i = 0; i < extractedFunctions.length; i += functionNumberLimit) {
+        const chunk = extractedFunctions.slice(i, i + functionNumberLimit);
+        const funcCodes = chunk.map((func) => func.code);
+        const funcNames = chunk.map((func) => func.name).join(", ");
+        console.log(`Generating documentation for functions: ${funcNames}`);
+        const doc = await generateAPIDocFromFunction(funcCodes);
         docs.push(`\n\n${doc}`);
     }
     return docs.join("\n\n---\n\n");
@@ -127,6 +111,7 @@ function extractAllFunctions(directoryPath) {
             }
         }
     }
+    console.log("Function array after extraction", functions.length);
     return functions;
 }
 function writeDocumentsToFile(documents, filename) {
