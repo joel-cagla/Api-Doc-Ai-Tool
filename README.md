@@ -1,9 +1,22 @@
 # Api-Doc-Ai-Tool
 A simple CLI AI tool for creating API docs.
 
-The tool takes two arguments: 
-1) The pathname of your directory containing your source code files. 
-2) The name of your output file, including the extension. This argument uses the -o flag (I.e. -o myOutputFile.md).
+The tool currently extracts functions, types and interfaces from source code files within the provided directory.
+
+The tool takes only one argument and some options which can be specified with flags.
+
+### Arguments:
+1) The pathname of your directory containing your source code files. I.e (/Users/MyUser/Documents/SourceFilesFolder)
+
+### Options:
+
+1) The name of your output file, including the extension. This argument uses the -o flag (I.e. -o myOutputFile.md).
+2) -f or --functions extracts functions only from source files
+3) -t or --types extracts only types from source files.
+
+For option #1 if no option is specified, the output file name will default to 'DocsFile.txt'.
+
+For options #2 and #3, if no option is specified all symbols are extracted.
 
 ### Installation: 
 
