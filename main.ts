@@ -3,13 +3,17 @@ import * as dotenv from "dotenv";
 import fetch from "node-fetch";
 import * as path from "path";
 import * as fs from "fs";
+import chalk from "chalk";
 
 dotenv.config();
 
-async function generateAPIDocFromFunction(fnCode: string[]) {
-  const prompt = `You are a technical writer. Create concise and clear REST-style API documentation for the following TypeScript functions. Do not include any pleasantries or anything other than the documentation itself.
+async function generateAPIDocFromFunction(symbolCode: string[]) {
+  const prompt = `You are a technical writer. You will be given the source code for a number of TypeScript functions, types and interfaces. 
+  Create concise and clear REST-style API documentation for all of the functions, types and interfaces you recieve. 
+  Separate the functions, types and interfaces and group them into separate sections.
+  Do not include any pleasantries or anything other than the documentation itself.
 \`\`\`
-${fnCode}
+${symbolCode}
 \`\`\`
 `;
   try {
@@ -26,27 +30,31 @@ ${fnCode}
     const data: any = await response.json();
     return data.response;
   } catch (error) {
-    console.log(error);
+    console.log(chalk.white.bgRed.bold("An error occurred: "), error);
   }
 }
 
 export async function generateDocs(
-  extractedFunctions: {
+  extractedSymbols: {
     name: string;
     code: string;
   }[]
 ) {
   const docs: string[] = [];
 
-  const functionNumberLimit = 4;
+  const symbolNumberLimit = 4;
 
-  for (let i = 0; i < extractedFunctions.length; i += functionNumberLimit) {
-    const chunk = extractedFunctions.slice(i, i + functionNumberLimit);
-    const funcCodes = chunk.map((func) => func.code);
-    const funcNames = chunk.map((func) => func.name).join(", ");
+  for (let i = 0; i < extractedSymbols.length; i += symbolNumberLimit) {
+    const chunk = extractedSymbols.slice(i, i + symbolNumberLimit);
+    const symbolCode = chunk.map((symbol) => symbol.code);
+    const symbolNames = chunk.map((symbol) => symbol.name).join(", ");
 
-    console.log(`Generating documentation for functions: ${funcNames}`);
-    const doc = await generateAPIDocFromFunction(funcCodes);
+    console.log(
+      chalk.black.bgCyan.bold(
+        `Generating documentation for the following symbols: ${symbolNames}\n`
+      )
+    );
+    const doc = await generateAPIDocFromFunction(symbolCode);
     docs.push(`\n\n${doc}`);
   }
   return docs.join("\n\n---\n\n");
@@ -61,8 +69,8 @@ export function extractAllFunctions(directoryPath: string) {
   const sourceFiles = project.getSourceFiles();
 
   if (!sourceFiles.length) {
-    console.log("No source code files found");
-    return;
+    console.log(chalk.red.bgWhite("No source code files found"));
+    return functions;
   }
 
   for (const file of sourceFiles) {
@@ -88,6 +96,39 @@ export function extractAllFunctions(directoryPath: string) {
     }
   }
   return functions;
+}
+
+export function extractTypesAndInterfaces(directoryPath: string) {
+  const project = new Project();
+  project.addSourceFilesAtPaths(`${directoryPath}/**/*.{ts,tsx}`);
+
+  const types: { name: string; code: string }[] = [];
+
+  const sourceFiles = project.getSourceFiles();
+
+  if (!sourceFiles.length) {
+    console.log(chalk.red.bgWhite("No source code files found"));
+    return types;
+  }
+
+  for (const file of sourceFiles) {
+    const typeAliases = file.getTypeAliases();
+    for (const alias of typeAliases) {
+      types.push({
+        name: alias.getName(),
+        code: alias.getText(),
+      });
+    }
+
+    const interfaces = file.getInterfaces();
+    for (const iface of interfaces) {
+      types.push({
+        name: iface.getName(),
+        code: iface.getText(),
+      });
+    }
+  }
+  return types;
 }
 
 export function writeDocumentsToFile(documents: string, filename: string) {

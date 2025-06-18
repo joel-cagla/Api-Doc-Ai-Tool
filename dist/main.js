@@ -38,17 +38,22 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.generateDocs = generateDocs;
 exports.extractAllFunctions = extractAllFunctions;
+exports.extractTypesAndInterfaces = extractTypesAndInterfaces;
 exports.writeDocumentsToFile = writeDocumentsToFile;
 const ts_morph_1 = require("ts-morph");
 const dotenv = __importStar(require("dotenv"));
 const node_fetch_1 = __importDefault(require("node-fetch"));
 const path = __importStar(require("path"));
 const fs = __importStar(require("fs"));
+const chalk_1 = __importDefault(require("chalk"));
 dotenv.config();
-async function generateAPIDocFromFunction(fnCode) {
-    const prompt = `You are a technical writer. Create concise and clear REST-style API documentation for the following TypeScript functions. Do not include any pleasantries or anything other than the documentation itself.
+async function generateAPIDocFromFunction(symbolCode) {
+    const prompt = `You are a technical writer. You will be given the source code for a number of TypeScript functions, types and interfaces. 
+  Create concise and clear REST-style API documentation for all of the functions, types and interfaces you recieve. 
+  Separate the functions, types and interfaces and group them into separate sections.
+  Do not include any pleasantries or anything other than the documentation itself.
 \`\`\`
-${fnCode}
+${symbolCode}
 \`\`\`
 `;
     try {
@@ -65,18 +70,18 @@ ${fnCode}
         return data.response;
     }
     catch (error) {
-        console.log(error);
+        console.log(chalk_1.default.white.bgRed.bold("An error occurred: "), error);
     }
 }
-async function generateDocs(extractedFunctions) {
+async function generateDocs(extractedSymbols) {
     const docs = [];
-    const functionNumberLimit = 4;
-    for (let i = 0; i < extractedFunctions.length; i += functionNumberLimit) {
-        const chunk = extractedFunctions.slice(i, i + functionNumberLimit);
-        const funcCodes = chunk.map((func) => func.code);
-        const funcNames = chunk.map((func) => func.name).join(", ");
-        console.log(`Generating documentation for functions: ${funcNames}`);
-        const doc = await generateAPIDocFromFunction(funcCodes);
+    const symbolNumberLimit = 4;
+    for (let i = 0; i < extractedSymbols.length; i += symbolNumberLimit) {
+        const chunk = extractedSymbols.slice(i, i + symbolNumberLimit);
+        const symbolCode = chunk.map((symbol) => symbol.code);
+        const symbolNames = chunk.map((symbol) => symbol.name).join(", ");
+        console.log(chalk_1.default.black.bgCyan.bold(`Generating documentation for the following symbols: ${symbolNames}`));
+        const doc = await generateAPIDocFromFunction(symbolCode);
         docs.push(`\n\n${doc}`);
     }
     return docs.join("\n\n---\n\n");
@@ -87,8 +92,8 @@ function extractAllFunctions(directoryPath) {
     const functions = [];
     const sourceFiles = project.getSourceFiles();
     if (!sourceFiles.length) {
-        console.log("No source code files found");
-        return;
+        console.log(chalk_1.default.red.bgWhite("No source code files found"));
+        return functions;
     }
     for (const file of sourceFiles) {
         if (file.getFunctions().length > 0) {
@@ -111,8 +116,34 @@ function extractAllFunctions(directoryPath) {
             }
         }
     }
-    console.log("Function array after extraction", functions.length);
     return functions;
+}
+function extractTypesAndInterfaces(directoryPath) {
+    const project = new ts_morph_1.Project();
+    project.addSourceFilesAtPaths(`${directoryPath}/**/*.{ts,tsx}`);
+    const types = [];
+    const sourceFiles = project.getSourceFiles();
+    if (!sourceFiles.length) {
+        console.log(chalk_1.default.red.bgWhite("No source code files found"));
+        return types;
+    }
+    for (const file of sourceFiles) {
+        const typeAliases = file.getTypeAliases();
+        for (const alias of typeAliases) {
+            types.push({
+                name: alias.getName(),
+                code: alias.getText(),
+            });
+        }
+        const interfaces = file.getInterfaces();
+        for (const iface of interfaces) {
+            types.push({
+                name: iface.getName(),
+                code: iface.getText(),
+            });
+        }
+    }
+    return types;
 }
 function writeDocumentsToFile(documents, filename) {
     const outputPath = path.resolve(__dirname, filename);

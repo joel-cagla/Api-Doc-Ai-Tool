@@ -1,11 +1,13 @@
 #!/usr/bin/env node
 
 import { Command } from "commander";
+import chalk from "chalk";
 import * as path from "path";
 import {
   extractAllFunctions,
   generateDocs,
   writeDocumentsToFile,
+  extractTypesAndInterfaces,
 } from "./main";
 
 const program = new Command();
@@ -22,17 +24,20 @@ program
     console.log(`Parsing directory: ${fullPath}`);
 
     const functions = extractAllFunctions(fullPath);
-    if (!functions) {
-      console.log("No functions extracted");
+    const types = extractTypesAndInterfaces(fullPath);
+    if (!functions && !types) {
+      console.log(chalk.white.bgRed("No source code extracted"));
       return;
     }
-    const docs = await generateDocs(functions);
+    const docs = await generateDocs([...functions, ...types]);
     if (!docs) {
-      console.log("No documentation generated.");
+      console.log(chalk.white.bgRed("No documentation generated."));
       return;
     }
     writeDocumentsToFile(docs, options.output);
-    console.log(`Documentation written to ${options.output}`);
+    console.log(
+      chalk.white.bgGreen.bold(`Documentation written to ${options.output}`)
+    );
   });
 
 program.parse();

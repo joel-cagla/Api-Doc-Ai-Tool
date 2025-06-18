@@ -33,8 +33,12 @@ var __importStar = (this && this.__importStar) || (function () {
         return result;
     };
 })();
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 const commander_1 = require("commander");
+const chalk_1 = __importDefault(require("chalk"));
 const path = __importStar(require("path"));
 const main_1 = require("./main");
 const program = new commander_1.Command();
@@ -48,16 +52,17 @@ program
     const fullPath = path.resolve(process.cwd(), directory);
     console.log(`Parsing directory: ${fullPath}`);
     const functions = (0, main_1.extractAllFunctions)(fullPath);
-    if (!functions) {
-        console.log("No functions extracted");
+    const types = (0, main_1.extractTypesAndInterfaces)(fullPath);
+    if (!functions && !types) {
+        console.log(chalk_1.default.red("No source code extracted"));
         return;
     }
-    const docs = await (0, main_1.generateDocs)(functions);
+    const docs = await (0, main_1.generateDocs)([...functions, ...types]);
     if (!docs) {
-        console.log("No documentation generated.");
+        console.log(chalk_1.default.red("No documentation generated."));
         return;
     }
     (0, main_1.writeDocumentsToFile)(docs, options.output);
-    console.log(`Documentation written to ${options.output}`);
+    console.log(chalk_1.default.green(`Documentation written to ${options.output}`));
 });
 program.parse();
