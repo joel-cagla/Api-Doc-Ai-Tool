@@ -47,22 +47,67 @@ program
     .description("Generates API documentation from TypeScript functions using Llama3")
     .version("Alpha 1.0")
     .argument("<directory>", "Path to directory with TypeScript files")
+    .option("-f, --functions", "Only extract functions")
+    .option("-t, --types", "Only extract types and interfaces")
     .option("-o, --output <file>", "Output file name", "DocsFile.txt")
     .action(async (directory, options) => {
     const fullPath = path.resolve(process.cwd(), directory);
     console.log(`Parsing directory: ${fullPath}`);
-    const functions = (0, main_1.extractAllFunctions)(fullPath);
-    const types = (0, main_1.extractTypesAndInterfaces)(fullPath);
-    if (!functions && !types) {
-        console.log(chalk_1.default.red("No source code extracted"));
-        return;
+    const selection = options.functions && !options.types
+        ? "functions"
+        : options.types && !options.functions
+            ? "types"
+            : "all";
+    switch (selection) {
+        case "functions": {
+            console.log(chalk_1.default.black.bgCyan("Extracting functions only\n"));
+            const functions = (0, main_1.extractAllFunctions)(fullPath);
+            if (!functions) {
+                console.log(chalk_1.default.white.bgRed("No functions extracted"));
+                return;
+            }
+            const docs = await (0, main_1.generateDocs)(functions);
+            if (!docs) {
+                console.log(chalk_1.default.white.bgRed("No documentation generated."));
+                return;
+            }
+            (0, main_1.writeDocumentsToFile)(docs, options.output);
+            console.log(chalk_1.default.green.bgBlack.bold(`Documentation written to ${options.output}`));
+            break;
+        }
+        case "types": {
+            console.log(chalk_1.default.black.bgCyan("Extracting types and interfaces only\n"));
+            const types = (0, main_1.extractTypesAndInterfaces)(fullPath);
+            if (!types) {
+                console.log(chalk_1.default.white.bgRed("No types extracted"));
+                return;
+            }
+            const docs = await (0, main_1.generateDocs)(types);
+            if (!docs) {
+                console.log(chalk_1.default.white.bgRed("No documentation generated."));
+                return;
+            }
+            (0, main_1.writeDocumentsToFile)(docs, options.output);
+            console.log(chalk_1.default.green.bgBlack.bold(`Documentation written to ${options.output}`));
+            break;
+        }
+        default: {
+            console.log(chalk_1.default.black.bgCyan("Extracting All symbols\n"));
+            const functions = (0, main_1.extractAllFunctions)(fullPath);
+            const types = (0, main_1.extractTypesAndInterfaces)(fullPath);
+            if (!functions && !types) {
+                console.log(chalk_1.default.white.bgRed("No source code extracted"));
+                return;
+            }
+            const docs = await (0, main_1.generateDocs)([...functions, ...types]);
+            if (!docs) {
+                console.log(chalk_1.default.white.bgRed("No documentation generated."));
+                return;
+            }
+            (0, main_1.writeDocumentsToFile)(docs, options.output);
+            console.log(chalk_1.default.green.bgBlack.bold(`Documentation written to ${options.output}`));
+            break;
+        }
     }
-    const docs = await (0, main_1.generateDocs)([...functions, ...types]);
-    if (!docs) {
-        console.log(chalk_1.default.red("No documentation generated."));
-        return;
-    }
-    (0, main_1.writeDocumentsToFile)(docs, options.output);
-    console.log(chalk_1.default.green(`Documentation written to ${options.output}`));
 });
 program.parse();

@@ -80,7 +80,7 @@ async function generateDocs(extractedSymbols) {
         const chunk = extractedSymbols.slice(i, i + symbolNumberLimit);
         const symbolCode = chunk.map((symbol) => symbol.code);
         const symbolNames = chunk.map((symbol) => symbol.name).join(", ");
-        console.log(chalk_1.default.black.bgCyan.bold(`Generating documentation for the following symbols: ${symbolNames}`));
+        console.log(chalk_1.default.black.bgCyan.bold(`Generating documentation for the following symbols: ${symbolNames}\n`));
         const doc = await generateAPIDocFromFunction(symbolCode);
         docs.push(`\n\n${doc}`);
     }
