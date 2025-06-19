@@ -36,9 +36,11 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.generateDocs = generateDocs;
+exports.generateDocsForSymbols = generateDocsForSymbols;
+exports.generateDocsForRoutes = generateDocsForRoutes;
 exports.extractAllFunctions = extractAllFunctions;
 exports.extractTypesAndInterfaces = extractTypesAndInterfaces;
+exports.extractExpressStyleRoutes = extractExpressStyleRoutes;
 exports.writeDocumentsToFile = writeDocumentsToFile;
 const ts_morph_1 = require("ts-morph");
 const dotenv = __importStar(require("dotenv"));
@@ -48,8 +50,11 @@ const fs = __importStar(require("fs"));
 const chalk_1 = __importDefault(require("chalk"));
 dotenv.config();
 async function generateAPIDocFromFunction(symbolCode) {
-    const prompt = `You are a technical writer. You will be given the source code for a number of TypeScript functions, types and interfaces. 
-  Create concise and clear REST-style API documentation for all of the functions, types and interfaces you recieve. 
+    const prompt = `
+  You are a technical writer. 
+  You will be given the source code for a number of TypeScript functions, types, interfaces and Express style routes, either separately or all together.
+  Create concise and clear REST-style API documentation for all of the functions, types, interfaces and routes you receive. 
+  If you only recieve one type of source code, only produce documnetation for that type. 
   Separate the functions, types and interfaces and group them into separate sections.
   Do not include any pleasantries or anything other than the documentation itself.
 \`\`\`
@@ -73,7 +78,7 @@ ${symbolCode}
         console.log(chalk_1.default.white.bgRed.bold("An error occurred: "), error);
     }
 }
-async function generateDocs(extractedSymbols) {
+async function generateDocsForSymbols(extractedSymbols) {
     const docs = [];
     const symbolNumberLimit = 4;
     for (let i = 0; i < extractedSymbols.length; i += symbolNumberLimit) {
@@ -82,6 +87,20 @@ async function generateDocs(extractedSymbols) {
         const symbolNames = chunk.map((symbol) => symbol.name).join(", ");
         console.log(chalk_1.default.black.bgCyan.bold(`Generating documentation for the following symbols: ${symbolNames}\n`));
         const doc = await generateAPIDocFromFunction(symbolCode);
+        docs.push(`\n\n${doc}`);
+    }
+    return docs.join("\n\n---\n\n");
+}
+async function generateDocsForRoutes(routes) {
+    const docs = [];
+    const symbolNumberLimit = 4;
+    for (let i = 0; i < routes.length; i += symbolNumberLimit) {
+        const chunk = routes.slice(i, i + symbolNumberLimit);
+        const fullRoute = chunk.map((route) => `${route.method.toUpperCase()} ${route.path} -> ${route.handler}`);
+        console.log(chalk_1.default.black.bgCyan.bold(`Generating documentation for the following route paths: ${chunk
+            .map((route) => route.path)
+            .join(", ")}\n`));
+        const doc = await generateAPIDocFromFunction(fullRoute);
         docs.push(`\n\n${doc}`);
     }
     return docs.join("\n\n---\n\n");
@@ -145,7 +164,45 @@ function extractTypesAndInterfaces(directoryPath) {
     }
     return types;
 }
+function extractExpressStyleRoutes(directoryPath) {
+    const project = new ts_morph_1.Project();
+    project.addSourceFilesAtPaths(`${directoryPath}/**/*.{ts,tsx}`);
+    const routes = [];
+    const sourceFiles = project.getSourceFiles();
+    for (const file of sourceFiles) {
+        const callExpressions = file.getDescendantsOfKind(ts_morph_1.SyntaxKind.CallExpression);
+        for (const callExpression of callExpressions) {
+            const expression = callExpression.getExpression();
+            if (expression.getKind() === ts_morph_1.SyntaxKind.PropertyAccessExpression) {
+                const propertyAccess = expression.asKindOrThrow(ts_morph_1.SyntaxKind.PropertyAccessExpression);
+                const method = propertyAccess.getName();
+                const caller = propertyAccess.getExpression().getText();
+                if (caller !== "router")
+                    continue;
+                const callArguments = callExpression.getArguments();
+                if (callArguments.length >= 2) {
+                    const pathArgument = callArguments[0];
+                    const handlerArgument = callArguments[1];
+                    if (pathArgument.getKind() === ts_morph_1.SyntaxKind.StringLiteral &&
+                        (handlerArgument.getKind() ===
+                            ts_morph_1.SyntaxKind.PropertyAccessExpression ||
+                            handlerArgument.getKind() === ts_morph_1.SyntaxKind.Identifier)) {
+                        const routePath = pathArgument.getText();
+                        const handlerName = handlerArgument.getText();
+                        routes.push({
+                            method,
+                            path: routePath,
+                            handler: handlerName,
+                        });
+                    }
+                }
+            }
+        }
+    }
+    return routes;
+}
 function writeDocumentsToFile(documents, filename) {
     const outputPath = path.resolve(__dirname, filename);
-    fs.writeFileSync(outputPath, documents, { encoding: "utf-8" });
+    const fullText = documents.join("\n\n---\n\n");
+    fs.writeFileSync(outputPath, fullText, { encoding: "utf-8" });
 }

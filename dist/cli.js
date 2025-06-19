@@ -49,6 +49,7 @@ program
     .argument("<directory>", "Path to directory with TypeScript files")
     .option("-f, --functions", "Only extract functions")
     .option("-t, --types", "Only extract types and interfaces")
+    .option("-r, --routes", "Only extract express style routes")
     .option("-o, --output <file>", "Output file name", "DocsFile.txt")
     .action(async (directory, options) => {
     const fullPath = path.resolve(process.cwd(), directory);
@@ -57,7 +58,9 @@ program
         ? "functions"
         : options.types && !options.functions
             ? "types"
-            : "all";
+            : options.routes && !options.functions && !options.types
+                ? "routes"
+                : "all";
     switch (selection) {
         case "functions": {
             console.log(chalk_1.default.black.bgCyan("Extracting functions only\n"));
@@ -66,12 +69,12 @@ program
                 console.log(chalk_1.default.white.bgRed("No functions extracted"));
                 return;
             }
-            const docs = await (0, main_1.generateDocs)(functions);
+            const docs = await (0, main_1.generateDocsForSymbols)(functions);
             if (!docs) {
                 console.log(chalk_1.default.white.bgRed("No documentation generated."));
                 return;
             }
-            (0, main_1.writeDocumentsToFile)(docs, options.output);
+            (0, main_1.writeDocumentsToFile)([docs], options.output);
             console.log(chalk_1.default.green.bgBlack.bold(`Documentation written to ${options.output}`));
             break;
         }
@@ -82,12 +85,28 @@ program
                 console.log(chalk_1.default.white.bgRed("No types extracted"));
                 return;
             }
-            const docs = await (0, main_1.generateDocs)(types);
+            const docs = await (0, main_1.generateDocsForSymbols)(types);
             if (!docs) {
                 console.log(chalk_1.default.white.bgRed("No documentation generated."));
                 return;
             }
-            (0, main_1.writeDocumentsToFile)(docs, options.output);
+            (0, main_1.writeDocumentsToFile)([docs], options.output);
+            console.log(chalk_1.default.green.bgBlack.bold(`Documentation written to ${options.output}`));
+            break;
+        }
+        case "routes": {
+            console.log(chalk_1.default.black.bgCyan("Extracting express routes only\n"));
+            const routes = (0, main_1.extractExpressStyleRoutes)(fullPath);
+            if (!routes) {
+                console.log(chalk_1.default.white.bgRed("No routes extracted"));
+                return;
+            }
+            const docs = await (0, main_1.generateDocsForRoutes)(routes);
+            if (!docs) {
+                console.log(chalk_1.default.white.bgRed("No documentation generated."));
+                return;
+            }
+            (0, main_1.writeDocumentsToFile)([docs], options.output);
             console.log(chalk_1.default.green.bgBlack.bold(`Documentation written to ${options.output}`));
             break;
         }
@@ -95,16 +114,21 @@ program
             console.log(chalk_1.default.black.bgCyan("Extracting All symbols\n"));
             const functions = (0, main_1.extractAllFunctions)(fullPath);
             const types = (0, main_1.extractTypesAndInterfaces)(fullPath);
+            const routes = (0, main_1.extractExpressStyleRoutes)(fullPath);
             if (!functions && !types) {
                 console.log(chalk_1.default.white.bgRed("No source code extracted"));
                 return;
             }
-            const docs = await (0, main_1.generateDocs)([...functions, ...types]);
-            if (!docs) {
+            const symbolDocs = await (0, main_1.generateDocsForSymbols)([
+                ...functions,
+                ...types,
+            ]);
+            const routeDocs = await (0, main_1.generateDocsForRoutes)(routes);
+            if (!symbolDocs && !routeDocs) {
                 console.log(chalk_1.default.white.bgRed("No documentation generated."));
                 return;
             }
-            (0, main_1.writeDocumentsToFile)(docs, options.output);
+            (0, main_1.writeDocumentsToFile)([symbolDocs, routeDocs], options.output);
             console.log(chalk_1.default.green.bgBlack.bold(`Documentation written to ${options.output}`));
             break;
         }

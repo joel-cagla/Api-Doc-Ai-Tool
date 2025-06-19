@@ -1,4 +1,4 @@
-import { Project } from "ts-morph";
+import { Project, SyntaxKind } from "ts-morph";
 import * as dotenv from "dotenv";
 import fetch from "node-fetch";
 import * as path from "path";
@@ -8,8 +8,11 @@ import chalk from "chalk";
 dotenv.config();
 
 async function generateAPIDocFromFunction(symbolCode: string[]) {
-  const prompt = `You are a technical writer. You will be given the source code for a number of TypeScript functions, types and interfaces. 
-  Create concise and clear REST-style API documentation for all of the functions, types and interfaces you recieve. 
+  const prompt = `
+  You are a technical writer. 
+  You will be given the source code for a number of TypeScript functions, types, interfaces and Express style routes, either separately or all together.
+  Create concise and clear REST-style API documentation for all of the functions, types, interfaces and routes you receive. 
+  If you only recieve one type of source code, only produce documnetation for that type. 
   Separate the functions, types and interfaces and group them into separate sections.
   Do not include any pleasantries or anything other than the documentation itself.
 \`\`\`
@@ -34,7 +37,7 @@ ${symbolCode}
   }
 }
 
-export async function generateDocs(
+export async function generateDocsForSymbols(
   extractedSymbols: {
     name: string;
     code: string;
@@ -55,6 +58,38 @@ export async function generateDocs(
       )
     );
     const doc = await generateAPIDocFromFunction(symbolCode);
+    docs.push(`\n\n${doc}`);
+  }
+  return docs.join("\n\n---\n\n");
+}
+
+export async function generateDocsForRoutes(
+  routes: {
+    method: string;
+    path: string;
+    handler: string;
+  }[]
+) {
+  const docs: string[] = [];
+
+  const symbolNumberLimit = 4;
+
+  for (let i = 0; i < routes.length; i += symbolNumberLimit) {
+    const chunk = routes.slice(i, i + symbolNumberLimit);
+
+    const fullRoute = chunk.map(
+      (route) =>
+        `${route.method.toUpperCase()} ${route.path} -> ${route.handler}`
+    );
+
+    console.log(
+      chalk.black.bgCyan.bold(
+        `Generating documentation for the following route paths: ${chunk
+          .map((route) => route.path)
+          .join(", ")}\n`
+      )
+    );
+    const doc = await generateAPIDocFromFunction(fullRoute);
     docs.push(`\n\n${doc}`);
   }
   return docs.join("\n\n---\n\n");
@@ -131,7 +166,60 @@ export function extractTypesAndInterfaces(directoryPath: string) {
   return types;
 }
 
-export function writeDocumentsToFile(documents: string, filename: string) {
+export function extractExpressStyleRoutes(directoryPath: string) {
+  const project = new Project();
+  project.addSourceFilesAtPaths(`${directoryPath}/**/*.{ts,tsx}`);
+
+  const routes: { method: string; path: string; handler: string }[] = [];
+
+  const sourceFiles = project.getSourceFiles();
+
+  for (const file of sourceFiles) {
+    const callExpressions = file.getDescendantsOfKind(
+      SyntaxKind.CallExpression
+    );
+    for (const callExpression of callExpressions) {
+      const expression = callExpression.getExpression();
+
+      if (expression.getKind() === SyntaxKind.PropertyAccessExpression) {
+        const propertyAccess = expression.asKindOrThrow(
+          SyntaxKind.PropertyAccessExpression
+        );
+        const method = propertyAccess.getName();
+        const caller = propertyAccess.getExpression().getText();
+
+        if (caller !== "router") continue;
+
+        const callArguments = callExpression.getArguments();
+
+        if (callArguments.length >= 2) {
+          const pathArgument = callArguments[0];
+          const handlerArgument = callArguments[1];
+
+          if (
+            pathArgument.getKind() === SyntaxKind.StringLiteral &&
+            (handlerArgument.getKind() ===
+              SyntaxKind.PropertyAccessExpression ||
+              handlerArgument.getKind() === SyntaxKind.Identifier)
+          ) {
+            const routePath = pathArgument.getText();
+            const handlerName = handlerArgument.getText();
+
+            routes.push({
+              method,
+              path: routePath,
+              handler: handlerName,
+            });
+          }
+        }
+      }
+    }
+  }
+  return routes;
+}
+
+export function writeDocumentsToFile(documents: string[], filename: string) {
   const outputPath = path.resolve(__dirname, filename);
-  fs.writeFileSync(outputPath, documents, { encoding: "utf-8" });
+  const fullText = documents.join("\n\n---\n\n");
+  fs.writeFileSync(outputPath, fullText, { encoding: "utf-8" });
 }
