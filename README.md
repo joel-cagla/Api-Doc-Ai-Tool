@@ -1,7 +1,7 @@
 # Api-Doc-Ai-Tool
 A simple CLI AI tool for creating API docs.
 
-The tool currently extracts functions, types and interfaces from source code files within the provided directory.
+The tool currently extracts functions, types, interfaces and Express style routes from source code files within the provided directory.
 
 The tool takes only one argument and some options which can be specified with flags.
 
@@ -13,10 +13,11 @@ The tool takes only one argument and some options which can be specified with fl
 1) The name of your output file, including the extension. This argument uses the -o flag (I.e. -o myOutputFile.md).
 2) -f or --functions extracts functions only from source files
 3) -t or --types extracts only types from source files.
+4) -r or --routes extracts only Express style routes from source files.
 
 For option #1 if no option is specified, the output file name will default to 'DocsFile.txt'.
 
-For options #2 and #3, if no option is specified all symbols are extracted.
+For all other options, if no option is specified all symbols are extracted.
 
 ### Installation: 
 
