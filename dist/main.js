@@ -52,9 +52,11 @@ dotenv.config();
 async function generateAPIDocFromFunction(symbolCode) {
     const prompt = `
   You are a technical writer. 
-  You will be given the source code for a number of TypeScript functions, types, interfaces and Express style routes, either separately or all together.
+  You will be given the source code for a number of TypeScript functions, types, interfaces and Express style routes, either separately or all together. 
   Create concise and clear REST-style API documentation for all of the functions, types, interfaces and routes you receive. 
-  If you only recieve one type of source code, only produce documnetation for that type. 
+  If you only recieve one type of source code, only produce documnetation for that type. For example, if you only receive source code for functions, only create documentation for those functions.
+  Each code block is labeled with the file it comes from. Group the documentation under each file name.
+  Code blocks with the same file name should be grouped together.
   Separate the functions, types and interfaces and group them into separate sections.
   Do not include any pleasantries or anything other than the documentation itself.
 \`\`\`
@@ -83,7 +85,7 @@ async function generateDocsForSymbols(extractedSymbols) {
     const symbolNumberLimit = 4;
     for (let i = 0; i < extractedSymbols.length; i += symbolNumberLimit) {
         const chunk = extractedSymbols.slice(i, i + symbolNumberLimit);
-        const symbolCode = chunk.map((symbol) => symbol.code);
+        const symbolCode = chunk.map((symbol) => `//File: ${symbol.file}\n${symbol.code}`);
         const symbolNames = chunk.map((symbol) => symbol.name).join(", ");
         console.log(chalk_1.default.black.bgCyan.bold(`Generating documentation for the following symbols: ${symbolNames}\n`));
         const doc = await generateAPIDocFromFunction(symbolCode);
@@ -121,6 +123,7 @@ function extractAllFunctions(directoryPath) {
                 functions.push({
                     name: regularFn.getName() ?? "anonymous",
                     code: regularFn.getText(),
+                    file: file.getBaseName(),
                 });
             }
         }
@@ -131,6 +134,7 @@ function extractAllFunctions(directoryPath) {
                 functions.push({
                     name: declaration.getName(),
                     code: declaration.getText(),
+                    file: file.getBaseName(),
                 });
             }
         }
@@ -152,6 +156,7 @@ function extractTypesAndInterfaces(directoryPath) {
             types.push({
                 name: alias.getName(),
                 code: alias.getText(),
+                file: file.getBaseName(),
             });
         }
         const interfaces = file.getInterfaces();
@@ -159,6 +164,7 @@ function extractTypesAndInterfaces(directoryPath) {
             types.push({
                 name: iface.getName(),
                 code: iface.getText(),
+                file: file.getBaseName(),
             });
         }
     }
@@ -193,6 +199,7 @@ function extractExpressStyleRoutes(directoryPath) {
                             method,
                             path: routePath,
                             handler: handlerName,
+                            file: file.getBaseName(),
                         });
                     }
                 }
