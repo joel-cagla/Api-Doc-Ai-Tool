@@ -1,29 +1,43 @@
-Here is an example of API documentation for the `test_func` function in the `test_file.py` file, using the Google-style documentation format:
-
 **test_file.py**
 
-### test_func
+### Functions
 
-Prints the provided value to the console.
+#### test_funcA(some_val)
 
-#### Parameters
+Prints the value of `some_val` to the console.
 
-* **some_val**: The value to be printed. (str)
+#### test_funcB(some_val)
 
-#### Returns
+Prints the value of `some_val` to the console.
 
-None
+#### test_funcC(some_val)
 
-#### Example usage
+Prints the value of `some_val` to the console.
 
-```
-from test_file import test_func
-test_func("Hello, world!")
-```
+#### test_funcD(some_val)
 
-In this example, the `test_func` function is called with the string `"Hello, world!"`, and it prints that string to the console.
+Prints the value of `some_val` to the console.
 
-### Notes
+#### test_funcE(some_val)
 
-* This function does not modify any external state or perform any I/O operations other than printing to the console.
-* The function returns immediately after printing the provided value.
+Prints the value of `some_val` to the console.
+
+#### test_funcF(some_val)
+
+Prints the value of `some_val` to the console.
+
+**another_test_file.py**
+
+### Functions
+
+#### another_test_funcA(argument)
+
+Returns the argument multiplied by 2. If the argument is not an integer, prints "Enter a number" and returns the original argument.
+
+#### another_test_funcB(argument)
+
+Returns the argument multiplied by 5. If the argument is not an integer, prints "Enter a number" and returns the original argument.
+
+#### another_test_funcC(argument)
+
+Returns the argument multiplied by 10. If the argument is not an integer, prints "Enter a number" and returns the original argument.

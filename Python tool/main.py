@@ -40,7 +40,7 @@ def generate_api_docs(symbols):
     symbol_code = ""
     for symbol in symbols:
         symbol_code += f"# File: {symbol['file']}\n{symbol['code']}\n\n"
-    prompt = f"Generate API documentation for the following Python code: {symbol_code}"
+    prompt = f"You are a technical writer. You will be given Python source code. You may be given the source code for a number symbols either separately or all together. Create concise and clear REST-style API documentation for all of the source code you receive. If you only recieve one type of symbol, only produce documnetation for that symbol. For example, if you only receive source code for functions, only create documentation for those functions.Each source code block is labeled with the file it comes from. Group the documentation under each file name. Source code blocks with the same file name must be grouped together. Separate the different types of symbols and group them into separate sections. Do not include any pleasantries or any writing other than the documentation itself. Source code: ${symbol_code}"
     response = requests.post(
         "http://localhost:11434/api/generate",
         json={"model": "llama3", "prompt": prompt, "stream": False}
@@ -68,7 +68,7 @@ def main(directory_path):
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
-        print("Usage: python api_doc_gen.py <path to source code directory>")
+        print("Usage: python3 main.py <path to source code directory>")
     else:
         main(sys.argv[1])
     
