@@ -3,7 +3,7 @@ import os
 import sys
 import requests
 
-def extract_symbols_from_file(file_path): 
+def extract_symbols_from_file(file_path):
     with open(file_path, "r", encoding="utf-8") as file:
         source = file.read()
     tree = ast.parse(source, filename=file_path)
@@ -23,9 +23,10 @@ def extract_symbols_from_file(file_path):
                 "file": os.path.basename(file_path)
             })
 
-            return symbols
+    return symbols
 
 def extract_symbols_from_directory(directory):
+    print("Extracting from directory: ", directory)
     all_symbols = []
     for root, _, files in os.walk(directory):
         for file in files:
@@ -35,14 +36,17 @@ def extract_symbols_from_directory(directory):
                 all_symbols.extend(symbols)
     return all_symbols
 
-def generate_api_docs(symbol_code):
+def generate_api_docs(symbols):
+    symbol_code = ""
+    for symbol in symbols:
+        symbol_code += f"# File: {symbol['file']}\n{symbol['code']}\n\n"
     prompt = f"Generate API documentation for the following Python code: {symbol_code}"
     response = requests.post(
         "http://localhost:11434/api/generate",
         json={"model": "llama3", "prompt": prompt, "stream": False}
     )
     result = response.json()
-    return result
+    return result.get("response", "")
 
 def write_to_file(output, filename="Api-doc.md"):
     with open(filename, "w", encoding="utf-8") as file: 
