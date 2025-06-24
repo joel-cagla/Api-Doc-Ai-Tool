@@ -36,21 +36,43 @@ def extract_symbols_from_directory(directory):
                 all_symbols.extend(symbols)
     return all_symbols
 
-def generate_api_docs(symbols):
-    symbol_code = ""
-    for symbol in symbols:
-        symbol_code += f"# File: {symbol['file']}\n{symbol['code']}\n\n"
-    prompt = f"You are a technical writer. You will be given Python source code. You may be given the source code for a number symbols either separately or all together. Create concise and clear REST-style API documentation for all of the source code you receive. If you only recieve one type of symbol, only produce documnetation for that symbol. For example, if you only receive source code for functions, only create documentation for those functions.Each source code block is labeled with the file it comes from. Group the documentation under each file name. Source code blocks with the same file name must be grouped together. Separate the different types of symbols and group them into separate sections. Do not include any pleasantries or any writing other than the documentation itself. Source code: ${symbol_code}"
-    response = requests.post(
+def generate_api_docs(symbols, limit=4):
+    docs = []
+    for chunk in chunk_list(symbols, limit):
+        symbol_code = ""
+        for symbol in chunk:
+            symbol_code += f"# File: {symbol['file']}\n{symbol['code']}\n\n"
+        prompt = (
+            "You are a technical writer."
+            "You will be given Python source code."
+            "You may be given the source code for a number symbols either separately or all together."
+            "Create concise and clear REST-style API documentation for all of the source code you receive."
+            "If you only recieve one type of symbol, only produce documnetation for that symbol."
+            "For example, if you only receive source code for functions, only create documentation for those functions."
+            "Each source code block is labeled with the file it comes from."
+            "Group the documentation under each file name."
+            "Source code blocks with the same file name must be grouped together."
+            "Separate the different types of symbols and group them into separate sections."
+            "Do not include any pleasantries or any writing other than the documentation itself.\n\n"
+            f"Source code: {symbol_code}"
+        )
+    
+        response = requests.post(
         "http://localhost:11434/api/generate",
         json={"model": "llama3", "prompt": prompt, "stream": False}
-    )
-    result = response.json()
-    return result.get("response", "")
+        )
+        
+        result = response.json()
+        docs.append(result.get("response", ""))
+    return "\n\n---\n\n".join(docs)
 
 def write_to_file(output, filename="Api-doc.md"):
     with open(filename, "w", encoding="utf-8") as file: 
         file.write(output)
+
+def chunk_list(symbol_list, limit):
+    for i in range(0, len(symbol_list), limit):
+        yield symbol_list[i:i + limit]
 
 def main(directory_path):
     symbols = extract_symbols_from_directory(directory_path)

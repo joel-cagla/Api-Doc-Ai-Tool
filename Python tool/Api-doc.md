@@ -18,26 +18,34 @@ Prints the value of `some_val` to the console.
 
 Prints the value of `some_val` to the console.
 
-#### test_funcE(some_val)
+---
+
+**test_file.py**
+
+### test_funcE(some_val)
 
 Prints the value of `some_val` to the console.
 
-#### test_funcF(some_val)
+### test_funcF(some_val)
 
 Prints the value of `some_val` to the console.
 
 **another_test_file.py**
 
-### Functions
+### another_test_funcA(argument)
 
-#### another_test_funcA(argument)
+Returns the input `argument` multiplied by 2, if it is an integer. Otherwise, prints "Enter a number" and returns None.
 
-Returns the argument multiplied by 2. If the argument is not an integer, prints "Enter a number" and returns the original argument.
+### another_test_funcB(argument)
 
-#### another_test_funcB(argument)
+Returns the input `argument` multiplied by 5, if it is an integer. Otherwise, prints "Enter a number" and returns None.
 
-Returns the argument multiplied by 5. If the argument is not an integer, prints "Enter a number" and returns the original argument.
+---
 
-#### another_test_funcC(argument)
+another_test_file.py
 
-Returns the argument multiplied by 10. If the argument is not an integer, prints "Enter a number" and returns the original argument.
+**Functions**
+
+* `another_test_funcC(argument)`
+	+ Returns the input argument multiplied by 10.
+	+ Argument must be an integer. If not, prints "Enter a number".
