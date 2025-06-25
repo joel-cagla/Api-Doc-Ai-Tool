@@ -98,25 +98,31 @@ def extract_symbols_from_directory(directory, argument_option):
     print("Extracting from directory: ", directory)
 
     all_symbols = []
+    match argument_option:
+        case "-f":
+            print("Extracting functions only")
+        case "-af":
+            print("Extracting async functions only")
+        case "-c":
+            print("Extracting classes only")
+        case "":
+            print("Extracting all symbols")
+    
     for root, _, files in os.walk(directory):
         for file in files:
             if file.endswith(".py"):
                 path = os.path.join(root, file)
                 match argument_option:
                     case "-f" | "--functions":
-                        print("Extracting functions only")
                         symbols = extract_functions_from_file(path)
                         all_symbols.extend(symbols)
                     case "-af" | "--asyncfunctions":
-                        print("Extracting async functions only")
                         symbols = extract_async_functions_from_file(path)
                         all_symbols.extend(symbols)
                     case "-c" | "--classes":
-                        print("Extracting classes only")
                         symbols = extract_classes_from_file(path)
                         all_symbols.extend(symbols)
                     case "":
-                        print("Extracting all symbols")
                         symbols = extract_all_symbols_from_file(path)
                         all_symbols.extend(symbols)
     return all_symbols
@@ -165,18 +171,18 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("directory", help="Directory containing Python source code files")
     parser.add_argument("-o", "--output", help="Output file name", default="API-doc.md")
-    parser.add_argument("-f", "--functions", help="Only extract functions")
-    parser.add_argument("-af", "--asyncfunctions", help="Only extract async functions")
-    parser.add_argument("-c", "--classes", help="Only extract classes")
+    parser.add_argument("-f", "--functions", help="Only extract functions", action="store_true")
+    parser.add_argument("-af", "--asyncfunctions", help="Only extract async functions", action="store_true")
+    parser.add_argument("-c", "--classes", help="Only extract classes", action="store_true")
 
     arguments = parser.parse_args()
 
     if arguments.functions:
-        option = "--functions"
+        option = "-f"
     elif arguments.asyncfunctions:
-        option = "--asyncfunctions"
+        option = "-af"
     elif arguments.classes:
-        option = "--classes"
+        option = "-c"
     else:
         option = ""
 
