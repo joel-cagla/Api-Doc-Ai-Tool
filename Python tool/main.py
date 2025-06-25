@@ -2,6 +2,7 @@ import ast
 import os
 import sys
 import requests
+import argparse
 
 def extract_symbols_from_file(file_path):
     with open(file_path, "r", encoding="utf-8") as file:
@@ -11,7 +12,7 @@ def extract_symbols_from_file(file_path):
     symbols = []
 
     for node in ast.walk(tree):
-        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef,)):
             start_line = node.lineno - 1
             end_line = node.body[-1].lineno
             code_lines = source.splitlines()[start_line:end_line]
@@ -53,6 +54,7 @@ def generate_api_docs(symbols, limit=4):
             "Group the documentation under each file name."
             "Source code blocks with the same file name must be grouped together."
             "Separate the different types of symbols and group them into separate sections."
+            "Keep the format exactly the same for all documentation."
             "Do not include any pleasantries or any writing other than the documentation itself.\n\n"
             f"Source code: {symbol_code}"
         )
@@ -74,23 +76,26 @@ def chunk_list(symbol_list, limit):
     for i in range(0, len(symbol_list), limit):
         yield symbol_list[i:i + limit]
 
-def main(directory_path):
-    symbols = extract_symbols_from_directory(directory_path)
 
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("directory", help="Directory containing Python source code files")
+    parser.add_argument("-o", "--output", help="Output file name", default="API-doc.md")
+
+    arguments = parser.parse_args()
+
+    symbols = extract_symbols_from_directory(arguments.directory)
     if not symbols:
-        print('No symbols found')
+        print("No symbols extracted")
         return
-    
+
     documentation = generate_api_docs(symbols)
     if documentation:
-        write_to_file(documentation)
-        print("Documentation written")
+        write_to_file(documentation, arguments.output)
+        print(f"Documentation written to {arguments.output}")
     else:
         print("No documentation generated")
 
 if __name__ == "__main__":
-    if len(sys.argv) < 2:
-        print("Usage: python3 main.py <path to source code directory>")
-    else:
-        main(sys.argv[1])
+    main()
     

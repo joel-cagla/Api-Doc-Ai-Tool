@@ -46,6 +46,6 @@ another_test_file.py
 
 **Functions**
 
-* `another_test_funcC(argument)`
-	+ Returns the input argument multiplied by 10.
-	+ Argument must be an integer. If not, prints "Enter a number".
+- `another_test_funcC(argument)`
+  - Returns the input argument multiplied by 10.
+  - Argument must be an integer. If not, prints "Enter a number".
