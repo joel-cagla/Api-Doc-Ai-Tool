@@ -1,10 +1,9 @@
 import ast
 import os
-import sys
 import requests
 import argparse
 
-def extract_symbols_from_file(file_path):
+def extract_all_symbols_from_file(file_path):
     with open(file_path, "r", encoding="utf-8") as file:
         source = file.read()
     tree = ast.parse(source, filename=file_path)
@@ -26,15 +25,100 @@ def extract_symbols_from_file(file_path):
 
     return symbols
 
-def extract_symbols_from_directory(directory):
+def extract_functions_from_file(file_path):
+    with open(file_path, "r", encoding="utf-8") as file:
+        source = file.read()
+    tree = ast.parse(source, filename=file_path)
+
+    functions = []
+
+    for node in ast.walk(tree):
+        if isinstance(node, (ast.FunctionDef)):
+            start_line = node.lineno - 1
+            end_line = node.body[-1].lineno
+            code_lines = source.splitlines()[start_line:end_line]
+            code = "\n".join(code_lines)
+
+            functions.append({
+                "name": node.name,
+                "code": code,
+                "file": os.path.basename(file_path)
+            })
+
+    return functions
+
+
+def extract_async_functions_from_file(file_path):
+    with open(file_path, "r", encoding="utf-8") as file:
+        source = file.read()
+    tree = ast.parse(source, filename=file_path)
+
+    async_functions = []
+
+    for node in ast.walk(tree):
+        if isinstance(node, (ast.AsyncFunctionDef)):
+            start_line = node.lineno - 1
+            end_line = node.body[-1].lineno
+            code_lines = source.splitlines()[start_line:end_line]
+            code = "\n".join(code_lines)
+
+            async_functions.append({
+                "name": node.name,
+                "code": code,
+                "file": os.path.basename(file_path)
+            })
+
+    return async_functions
+
+
+def extract_classes_from_file(file_path):
+    with open(file_path, "r", encoding="utf-8") as file:
+        source = file.read()
+    tree = ast.parse(source, filename=file_path)
+
+    classes = []
+
+    for node in ast.walk(tree):
+        if isinstance(node, (ast.ClassDef,)):
+            start_line = node.lineno - 1
+            end_line = node.body[-1].lineno
+            code_lines = source.splitlines()[start_line:end_line]
+            code = "\n".join(code_lines)
+
+            classes.append({
+                "name": node.name,
+                "code": code,
+                "file": os.path.basename(file_path)
+            })
+
+    return classes
+
+
+def extract_symbols_from_directory(directory, argument_option):
     print("Extracting from directory: ", directory)
+
     all_symbols = []
     for root, _, files in os.walk(directory):
         for file in files:
             if file.endswith(".py"):
                 path = os.path.join(root, file)
-                symbols = extract_symbols_from_file(path)
-                all_symbols.extend(symbols)
+                match argument_option:
+                    case "-f" | "--functions":
+                        print("Extracting functions only")
+                        symbols = extract_functions_from_file(path)
+                        all_symbols.extend(symbols)
+                    case "-af" | "--asyncfunctions":
+                        print("Extracting async functions only")
+                        symbols = extract_async_functions_from_file(path)
+                        all_symbols.extend(symbols)
+                    case "-c" | "--classes":
+                        print("Extracting classes only")
+                        symbols = extract_classes_from_file(path)
+                        all_symbols.extend(symbols)
+                    case "":
+                        print("Extracting all symbols")
+                        symbols = extract_all_symbols_from_file(path)
+                        all_symbols.extend(symbols)
     return all_symbols
 
 def generate_api_docs(symbols, limit=4):
@@ -81,10 +165,22 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("directory", help="Directory containing Python source code files")
     parser.add_argument("-o", "--output", help="Output file name", default="API-doc.md")
+    parser.add_argument("-f", "--functions", help="Only extract functions")
+    parser.add_argument("-af", "--asyncfunctions", help="Only extract async functions")
+    parser.add_argument("-c", "--classes", help="Only extract classes")
 
     arguments = parser.parse_args()
 
-    symbols = extract_symbols_from_directory(arguments.directory)
+    if arguments.functions:
+        option = "--functions"
+    elif arguments.asyncfunctions:
+        option = "--asyncfunctions"
+    elif arguments.classes:
+        option = "--classes"
+    else:
+        option = ""
+
+    symbols = extract_symbols_from_directory(arguments.directory, option)
     if not symbols:
         print("No symbols extracted")
         return
