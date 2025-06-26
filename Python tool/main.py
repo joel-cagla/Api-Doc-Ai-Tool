@@ -95,6 +95,48 @@ def extract_classes_from_file(file_path):
 
     return classes
 
+def extract_routes_from_file(file_path):
+    with open(file_path, "r", encoding="utf-8") as file:
+        source = file.read()
+    tree = ast.parse(source, filename=file_path)
+
+    routes = []
+
+    for node in ast.walk(tree):
+        if isinstance(node, ast.FunctionDef) and node.decorator_list:
+            for decorator in node.decorator_list:
+                if isinstance(decorator, ast.Call) and hasattr(decorator.func, "attr"):
+                    route_path = None
+                    methods=["GET"]
+                    if decorator.func.attr in ["route", "get", "post", "put","delete","patch"]:
+                        if decorator.args:
+                            arg = decorator.args[0]
+                            if isinstance(arg, ast.Constant):
+                                route_path = arg.value
+                        for kw in decorator.keywords:
+                            if kw.arg == "methods" and isinstance(kw.value, ast.List):
+                                methods = [elt.value for elt in kw.value.elts if isinstance(elt, ast.Constant)]
+                        if not decorator.keywords and decorator.func.attr in ["get", "post", "put","delete","patch"]:
+                            methods = [decorator.func.attr.upper()]
+                        
+                    if route_path:
+                        for method in methods:
+                            routes.append({
+                                "code": f"Method: {method}, Path: {route_path}, Handler: {node.name}",
+                                "file": os.path.basename(file_path)
+                            })
+    return routes
+
+def extract_routes_from_directory(directory):
+    all_routes = []
+    for root, _, files in os.walk(directory):
+        for file in files:
+            if file.endswith(".py"):
+                path = os.path.join(root, file)
+                routes = extract_routes_from_file(path)
+                all_routes.extend(routes)
+    return all_routes
+
 
 def extract_symbols_from_directory(directory, argument_option):
     print("Extracting from directory: ", directory)
@@ -107,6 +149,8 @@ def extract_symbols_from_directory(directory, argument_option):
             print("Extracting async functions only")
         case "-c":
             print("Extracting classes only")
+        case "-r":
+            print("Extracting routes only")
         case "":
             print("Extracting all symbols")
     
@@ -115,30 +159,40 @@ def extract_symbols_from_directory(directory, argument_option):
             if file.endswith(".py"):
                 path = os.path.join(root, file)
                 match argument_option:
-                    case "-f" | "--functions":
+                    case "-f":
                         symbols = extract_functions_from_file(path)
                         all_symbols.extend(symbols)
-                    case "-af" | "--asyncfunctions":
+                    case "-af":
                         symbols = extract_async_functions_from_file(path)
                         all_symbols.extend(symbols)
-                    case "-c" | "--classes":
+                    case "-c":
                         symbols = extract_classes_from_file(path)
                         all_symbols.extend(symbols)
+                    case "-r":
+                        routes = extract_routes_from_directory(directory)
+                        all_symbols.extend(routes)
                     case "":
                         symbols = extract_all_symbols_from_file(path)
                         all_symbols.extend(symbols)
+                        routes = extract_routes_from_file(path) 
+                        all_symbols.extend(symbols)
+                        all_symbols.extend(routes)
+
     return all_symbols
 
-def generate_api_docs(symbols, limit=4):
+def generate_api_docs(symbols,limit=4):
     docs = []
-    for chunk in chunk_list(symbols, limit):
-        symbol_code = ""
-        for symbol in chunk:
-            symbol_code += f"# File: {symbol['file']}\n{symbol['code']}\n\n"
+    if symbols:
+        for chunk in chunk_list(symbols, limit):
+            symbol_code = ""
+            for symbol in chunk:
+                symbol_code += f"# File: {symbol['file']}\n{symbol['code']}\n\n"
+        
         prompt = (
             "You are a technical writer."
             "You will be given Python source code."
             "You may be given the source code for a number symbols either separately or all together."
+            "You may also receive flask style API routes in the format: 'File: <file name> \n Method: <HTTP method>, Path: <API path>, Handler: <handler>'."
             "Create concise and clear REST-style API documentation for all of the source code you receive."
             "If you only recieve one type of symbol, only produce documnetation for that symbol."
             "For example, if you only receive source code for functions, only create documentation for those functions."
@@ -179,6 +233,7 @@ def main():
     parser.add_argument("-f", "--functions", help="Only extract functions", action="store_true")
     parser.add_argument("-af", "--asyncfunctions", help="Only extract async functions", action="store_true")
     parser.add_argument("-c", "--classes", help="Only extract classes", action="store_true")
+    parser.add_argument("-r", "--routes", help="Only extract flask style routes", action="store_true")
     parser.add_argument("-odir", "--outdir", help="Directory to write the output file to", default=".")
 
     arguments = parser.parse_args()
@@ -189,6 +244,8 @@ def main():
         option = "-af"
     elif arguments.classes:
         option = "-c"
+    elif arguments.routes:
+        option = "-r"
     else:
         option = ""
 
