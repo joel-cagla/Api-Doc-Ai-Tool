@@ -1,10 +1,10 @@
 **test_routes.py**
 
-### API Routes
+### Functions/Handlers
 
-* **/testroute1**
+* **test**: 
 	+ Method: POST
-	+ Handler: test
-* **/testroute2**
+	+ Path: /testroute1
+* **test**:
 	+ Method: POST
-	+ Handler: test
+	+ Path: /testroute2

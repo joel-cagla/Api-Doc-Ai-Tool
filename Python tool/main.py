@@ -127,17 +127,6 @@ def extract_routes_from_file(file_path):
                             })
     return routes
 
-def extract_routes_from_directory(directory):
-    all_routes = []
-    for root, _, files in os.walk(directory):
-        for file in files:
-            if file.endswith(".py"):
-                path = os.path.join(root, file)
-                routes = extract_routes_from_file(path)
-                all_routes.extend(routes)
-    return all_routes
-
-
 def extract_symbols_from_directory(directory, argument_option):
     print("Extracting from directory: ", directory)
 
@@ -169,13 +158,12 @@ def extract_symbols_from_directory(directory, argument_option):
                         symbols = extract_classes_from_file(path)
                         all_symbols.extend(symbols)
                     case "-r":
-                        routes = extract_routes_from_directory(directory)
+                        routes = extract_routes_from_file(path)
                         all_symbols.extend(routes)
                     case "":
                         symbols = extract_all_symbols_from_file(path)
                         all_symbols.extend(symbols)
-                        routes = extract_routes_from_file(path) 
-                        all_symbols.extend(symbols)
+                        routes = extract_routes_from_file(path)
                         all_symbols.extend(routes)
 
     return all_symbols
