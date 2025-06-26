@@ -51,6 +51,7 @@ program
     .option("-t, --types", "Only extract types and interfaces")
     .option("-r, --routes", "Only extract express style routes")
     .option("-o, --output <file>", "Output file name", "DocsFile.txt")
+    .option("--outdir <directory>", "Directory to write the output file to", ".")
     .action(async (directory, options) => {
     const fullPath = path.resolve(process.cwd(), directory);
     console.log(`Parsing directory: ${fullPath}`);
@@ -74,8 +75,7 @@ program
                 console.log(chalk_1.default.white.bgRed("No documentation generated."));
                 return;
             }
-            (0, main_1.writeDocumentsToFile)([docs], options.output);
-            console.log(chalk_1.default.green.bgBlack.bold(`Documentation written to ${options.output}`));
+            (0, main_1.writeDocumentsToFile)([docs], options.output, options.outdir);
             break;
         }
         case "types": {
@@ -90,8 +90,7 @@ program
                 console.log(chalk_1.default.white.bgRed("No documentation generated."));
                 return;
             }
-            (0, main_1.writeDocumentsToFile)([docs], options.output);
-            console.log(chalk_1.default.green.bgBlack.bold(`Documentation written to ${options.output}`));
+            (0, main_1.writeDocumentsToFile)([docs], options.output, options.outdir);
             break;
         }
         case "routes": {
@@ -106,8 +105,7 @@ program
                 console.log(chalk_1.default.white.bgRed("No documentation generated."));
                 return;
             }
-            (0, main_1.writeDocumentsToFile)([docs], options.output);
-            console.log(chalk_1.default.green.bgBlack.bold(`Documentation written to ${options.output}`));
+            (0, main_1.writeDocumentsToFile)([docs], options.output, options.outdir);
             break;
         }
         default: {
@@ -128,8 +126,7 @@ program
                 console.log(chalk_1.default.white.bgRed("No documentation generated."));
                 return;
             }
-            (0, main_1.writeDocumentsToFile)([symbolDocs, routeDocs], options.output);
-            console.log(chalk_1.default.green.bgBlack.bold(`Documentation written to ${options.output}`));
+            (0, main_1.writeDocumentsToFile)([symbolDocs, routeDocs], options.output, options.outdir);
             break;
         }
     }

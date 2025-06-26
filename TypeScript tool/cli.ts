@@ -24,6 +24,7 @@ program
   .option("-t, --types", "Only extract types and interfaces")
   .option("-r, --routes", "Only extract express style routes")
   .option("-o, --output <file>", "Output file name", "DocsFile.txt")
+  .option("--outdir <directory>", "Directory to write the output file to", ".")
   .action(async (directory, options) => {
     const fullPath = path.resolve(process.cwd(), directory);
     console.log(`Parsing directory: ${fullPath}`);
@@ -52,10 +53,7 @@ program
           console.log(chalk.white.bgRed("No documentation generated."));
           return;
         }
-        writeDocumentsToFile([docs], options.output);
-        console.log(
-          chalk.green.bgBlack.bold(`Documentation written to ${options.output}`)
-        );
+        writeDocumentsToFile([docs], options.output, options.outdir);
         break;
       }
       case "types": {
@@ -75,10 +73,7 @@ program
           console.log(chalk.white.bgRed("No documentation generated."));
           return;
         }
-        writeDocumentsToFile([docs], options.output);
-        console.log(
-          chalk.green.bgBlack.bold(`Documentation written to ${options.output}`)
-        );
+        writeDocumentsToFile([docs], options.output, options.outdir);
         break;
       }
       case "routes": {
@@ -96,10 +91,7 @@ program
           console.log(chalk.white.bgRed("No documentation generated."));
           return;
         }
-        writeDocumentsToFile([docs], options.output);
-        console.log(
-          chalk.green.bgBlack.bold(`Documentation written to ${options.output}`)
-        );
+        writeDocumentsToFile([docs], options.output, options.outdir);
         break;
       }
       default: {
@@ -122,9 +114,10 @@ program
           console.log(chalk.white.bgRed("No documentation generated."));
           return;
         }
-        writeDocumentsToFile([symbolDocs, routeDocs], options.output);
-        console.log(
-          chalk.green.bgBlack.bold(`Documentation written to ${options.output}`)
+        writeDocumentsToFile(
+          [symbolDocs, routeDocs],
+          options.output,
+          options.outdir
         );
         break;
       }

@@ -52,13 +52,15 @@ dotenv.config();
 async function generateAPIDocFromFunction(symbolCode) {
     const prompt = `
   You are a technical writer. 
-  You will be given the source code for a number of TypeScript functions, types, interfaces and Express style routes, either separately or all together. 
+  You will be given the source code for TypeScript functions, types, interfaces and Express style routes. 
+  You may be given the source code for these symbols either separately or all together.
   Create concise and clear REST-style API documentation for all of the functions, types, interfaces and routes you receive. 
-  If you only recieve one type of source code, only produce documnetation for that type. For example, if you only receive source code for functions, only create documentation for those functions.
-  Each code block is labeled with the file it comes from. Group the documentation under each file name.
-  Code blocks with the same file name should be grouped together.
-  Separate the functions, types and interfaces and group them into separate sections.
-  Do not include any pleasantries or anything other than the documentation itself.
+  If you only recieve one type of symbol, only produce documnetation for that symbol. 
+  For example, if you only receive source code for functions, only create documentation for those functions.
+  Each source code block is labeled with the file it comes from. Group the documentation under each file name.
+  Source code blocks with the same file name must be grouped together.
+  Separate the functions, types, interfaces and Express style routes and group them into separate sections.
+  Do not include any pleasantries or any writing other than the documentation itself.
 \`\`\`
 ${symbolCode}
 \`\`\`
@@ -208,8 +210,12 @@ function extractExpressStyleRoutes(directoryPath) {
     }
     return routes;
 }
-function writeDocumentsToFile(documents, filename) {
-    const outputPath = path.resolve(__dirname, filename);
+function writeDocumentsToFile(documents, filename, outDir = ".") {
+    const outputDir = path.resolve(outDir);
+    const fullPath = path.join(outputDir, filename);
+    //const outputPath = path.resolve(__dirname, filename);
     const fullText = documents.join("\n\n---\n\n");
-    fs.writeFileSync(outputPath, fullText, { encoding: "utf-8" });
+    fs.mkdirSync(outputDir, { recursive: true });
+    fs.writeFileSync(fullPath, fullText, { encoding: "utf-8" });
+    console.log(chalk_1.default.green.bgBlack.bold(`Documentation written to ${fullPath}`));
 }

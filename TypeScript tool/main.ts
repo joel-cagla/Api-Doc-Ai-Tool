@@ -235,8 +235,16 @@ export function extractExpressStyleRoutes(directoryPath: string) {
   return routes;
 }
 
-export function writeDocumentsToFile(documents: string[], filename: string) {
-  const outputPath = path.resolve(__dirname, filename);
+export function writeDocumentsToFile(
+  documents: string[],
+  filename: string,
+  outDir: string = "."
+) {
+  const outputDir = path.resolve(outDir);
+  const fullPath = path.join(outputDir, filename);
+  //const outputPath = path.resolve(__dirname, filename);
   const fullText = documents.join("\n\n---\n\n");
-  fs.writeFileSync(outputPath, fullText, { encoding: "utf-8" });
+  fs.mkdirSync(outputDir, { recursive: true });
+  fs.writeFileSync(fullPath, fullText, { encoding: "utf-8" });
+  console.log(chalk.green.bgBlack.bold(`Documentation written to ${fullPath}`));
 }
