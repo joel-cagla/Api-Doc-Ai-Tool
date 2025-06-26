@@ -14,8 +14,11 @@ The tool takes only one argument and some options which can be specified with fl
 2) -f or --functions extracts functions only from source files
 3) -t or --types extracts only types from source files.
 4) -r or --routes extracts only Express style routes from source files.
+5) ```--outdir``` specifies the directory to write the output file to. If the directory does not exist it will be created. (I.e. 
+--outdir ./myFiles/directory-to-write-to).
+6) ```--help``` shows usage of and all arugments and options for the tool.
 
-For option #1 if no option is specified, the output file name will default to 'DocsFile.txt'.
+For option #1 if no option is specified, the output file name will default to 'DocsFile.txt'. For option #5 if no directory is specified it will write to the local directory that the tool is run from.
 
 For all other options, if no option is specified all symbols are extracted.
 
@@ -30,7 +33,7 @@ Use `Ollama serve` to start the LLM server if not already running.
 
 Use `npm run build` to build the tool. Also run this command after making any changes to the source code before running the tool to ensure that your changes take effect.
 
-To run the tool in your terminal from any location use `npm link`. The tool then runs with this command: `api-doc-gen <path to directory> -o <file name>`.
+To run the tool in your terminal from any location use `npm link`. The tool then runs with this command: `ts-api-doc-gen <path to directory> -o <file name> <[options flags]>`.
 
 If you do not wish to use `npm link`, the tool can be run via `node dist/cli.js <path to directory> -o <file name>`
 
