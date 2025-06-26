@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import ast
 import os
 import requests
@@ -158,9 +160,12 @@ def generate_api_docs(symbols, limit=4):
         docs.append(result.get("response", ""))
     return "\n\n---\n\n".join(docs)
 
-def write_to_file(output, filename="Api-doc.md"):
-    with open(filename, "w", encoding="utf-8") as file: 
+def write_to_file(output, filename="Api-doc.md", outdir="."):
+    os.makedirs(outdir, exist_ok=True)
+    full_path = os.path.join(outdir, filename)
+    with open(full_path, "w", encoding="utf-8") as file:
         file.write(output)
+    print(f"Documentation written to {full_path}")
 
 def chunk_list(symbol_list, limit):
     for i in range(0, len(symbol_list), limit):
@@ -174,6 +179,7 @@ def main():
     parser.add_argument("-f", "--functions", help="Only extract functions", action="store_true")
     parser.add_argument("-af", "--asyncfunctions", help="Only extract async functions", action="store_true")
     parser.add_argument("-c", "--classes", help="Only extract classes", action="store_true")
+    parser.add_argument("-odir", "--outdir", help="Directory to write the output file to", default=".")
 
     arguments = parser.parse_args()
 
@@ -193,8 +199,7 @@ def main():
 
     documentation = generate_api_docs(symbols)
     if documentation:
-        write_to_file(documentation, arguments.output)
-        print(f"Documentation written to {arguments.output}")
+        write_to_file(documentation, arguments.output, arguments.outdir)
     else:
         print("No documentation generated")
 
