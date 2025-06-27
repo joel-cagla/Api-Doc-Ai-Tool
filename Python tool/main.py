@@ -20,7 +20,6 @@ def extract_all_symbols_from_file(file_path):
             code = "\n".join(code_lines)
 
             symbols.append({
-                "name": node.name,
                 "code": code,
                 "file": os.path.basename(file_path)
             })
@@ -42,7 +41,6 @@ def extract_functions_from_file(file_path):
             code = "\n".join(code_lines)
 
             functions.append({
-                "name": node.name,
                 "code": code,
                 "file": os.path.basename(file_path)
             })
@@ -65,7 +63,6 @@ def extract_async_functions_from_file(file_path):
             code = "\n".join(code_lines)
 
             async_functions.append({
-                "name": node.name,
                 "code": code,
                 "file": os.path.basename(file_path)
             })
@@ -88,7 +85,6 @@ def extract_classes_from_file(file_path):
             code = "\n".join(code_lines)
 
             classes.append({
-                "name": node.name,
                 "code": code,
                 "file": os.path.basename(file_path)
             })
@@ -178,11 +174,10 @@ def generate_api_docs(symbols,limit=4):
         prompt = (
             "You are a technical writer."
             "You will be given Python source code."
-            "You may be given the source code for a number symbols either separately or all together."
-            "You may also receive flask style API routes in the format: 'File: <file name> \n Method: <HTTP method>, Path: <API path>, Handler: <handler>'."
-            "Create concise and clear REST-style API documentation for all of the source code you receive."
-            "If you only recieve one type of symbol, only produce documnetation for that symbol."
-            "For example, if you only receive source code for functions, only create documentation for those functions."
+            "You must create concise and clear REST-style API documentation for all of the source code you receive."
+            "You will be given the source code for a number symbols."
+            "You may also receive flask style API routes."
+            "Only produce documnetation for the symbols you receive."
             "Each source code block is labeled with the file it comes from."
             "Group the documentation under each file name."
             "Source code blocks with the same file name must be grouped together."
