@@ -18,9 +18,10 @@ def extract_all_symbols_from_file(file_path):
             end_line = getattr(node, "end_lineno", node.body[-1].lineno)
             code_lines = source.splitlines()[start_line:end_line]
             code = "\n".join(code_lines)
-            print(f"Extracted: {node.name} from {file_path}")
+            #print(f"Extracted: {node.name} from {file_path}")
 
             symbols.append({
+                "name": node.name,
                 "code": code,
                 "file": os.path.basename(file_path)
             })
@@ -42,6 +43,7 @@ def extract_functions_from_file(file_path):
             code = "\n".join(code_lines)
 
             functions.append({
+                "name": node.name,
                 "code": code,
                 "file": os.path.basename(file_path)
             })
@@ -64,6 +66,7 @@ def extract_async_functions_from_file(file_path):
             code = "\n".join(code_lines)
 
             async_functions.append({
+                "name": node.name,
                 "code": code,
                 "file": os.path.basename(file_path)
             })
@@ -86,6 +89,7 @@ def extract_classes_from_file(file_path):
             code = "\n".join(code_lines)
 
             classes.append({
+                "name": node.name,
                 "code": code,
                 "file": os.path.basename(file_path)
             })
@@ -119,6 +123,7 @@ def extract_routes_from_file(file_path):
                     if route_path:
                         for method in methods:
                             routes.append({
+                                "name": node.name,
                                 "code": f"Method: {method}, Path: {route_path}, Handler: {node.name}",
                                 "file": os.path.basename(file_path)
                             })
@@ -165,13 +170,13 @@ def extract_symbols_from_directory(directory, argument_option):
 
     return all_symbols
 
-def generate_api_docs(symbols,limit=4):
+def generate_api_docs(symbols,limit=2):
     docs = []
-    # for chunk in chunk_list(symbols, limit):
-    #     symbol_code = ""
-    for symbol in symbols:
+    for chunk in chunk_list(symbols, limit):
         symbol_code = ""
-        symbol_code += f"# File: {symbol['file']}\n{symbol['code']}\n\n"
+        print("Generating documentation for: ", [s["name"] for s in chunk])
+        for symbol in chunk:
+            symbol_code += f"# File: {symbol['file']}\n{symbol['code']}\n\n"
         
         prompt = (
             "You are a technical writer."
