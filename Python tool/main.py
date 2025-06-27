@@ -13,7 +13,7 @@ def extract_all_symbols_from_file(file_path):
     symbols = []
 
     for node in ast.walk(tree):
-        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef,)):
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
             start_line = node.lineno - 1
             end_line = getattr(node, "end_lineno", node.body[-1].lineno)
             code_lines = source.splitlines()[start_line:end_line]
