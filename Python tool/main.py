@@ -15,9 +15,10 @@ def extract_all_symbols_from_file(file_path):
     for node in ast.walk(tree):
         if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef,)):
             start_line = node.lineno - 1
-            end_line = node.body[-1].lineno
+            end_line = getattr(node, "end_lineno", node.body[-1].lineno)
             code_lines = source.splitlines()[start_line:end_line]
             code = "\n".join(code_lines)
+            print(f"Extracted: {node.name} from {file_path}")
 
             symbols.append({
                 "code": code,
@@ -36,7 +37,7 @@ def extract_functions_from_file(file_path):
     for node in ast.walk(tree):
         if isinstance(node, (ast.FunctionDef)):
             start_line = node.lineno - 1
-            end_line = node.body[-1].lineno
+            end_line = getattr(node, "end_lineno", node.body[-1].lineno)
             code_lines = source.splitlines()[start_line:end_line]
             code = "\n".join(code_lines)
 
@@ -58,7 +59,7 @@ def extract_async_functions_from_file(file_path):
     for node in ast.walk(tree):
         if isinstance(node, (ast.AsyncFunctionDef)):
             start_line = node.lineno - 1
-            end_line = node.body[-1].lineno
+            end_line = getattr(node, "end_lineno", node.body[-1].lineno)
             code_lines = source.splitlines()[start_line:end_line]
             code = "\n".join(code_lines)
 
@@ -80,7 +81,7 @@ def extract_classes_from_file(file_path):
     for node in ast.walk(tree):
         if isinstance(node, (ast.ClassDef,)):
             start_line = node.lineno - 1
-            end_line = node.body[-1].lineno
+            end_line = getattr(node, "end_lineno", node.body[-1].lineno)
             code_lines = source.splitlines()[start_line:end_line]
             code = "\n".join(code_lines)
 
@@ -166,10 +167,11 @@ def extract_symbols_from_directory(directory, argument_option):
 
 def generate_api_docs(symbols,limit=4):
     docs = []
-    for chunk in chunk_list(symbols, limit):
+    # for chunk in chunk_list(symbols, limit):
+    #     symbol_code = ""
+    for symbol in symbols:
         symbol_code = ""
-        for symbol in chunk:
-            symbol_code += f"# File: {symbol['file']}\n{symbol['code']}\n\n"
+        symbol_code += f"# File: {symbol['file']}\n{symbol['code']}\n\n"
         
         prompt = (
             "You are a technical writer."
