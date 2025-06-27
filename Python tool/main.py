@@ -18,7 +18,6 @@ def extract_all_symbols_from_file(file_path):
             end_line = getattr(node, "end_lineno", node.body[-1].lineno)
             code_lines = source.splitlines()[start_line:end_line]
             code = "\n".join(code_lines)
-            #print(f"Extracted: {node.name} from {file_path}")
 
             symbols.append({
                 "name": node.name,
