@@ -170,11 +170,10 @@ def extract_symbols_from_directory(directory, argument_option):
 
 def generate_api_docs(symbols,limit=4):
     docs = []
-    if symbols:
-        for chunk in chunk_list(symbols, limit):
-            symbol_code = ""
-            for symbol in chunk:
-                symbol_code += f"# File: {symbol['file']}\n{symbol['code']}\n\n"
+    for chunk in chunk_list(symbols, limit):
+        symbol_code = ""
+        for symbol in chunk:
+            symbol_code += f"# File: {symbol['file']}\n{symbol['code']}\n\n"
         
         prompt = (
             "You are a technical writer."
